@@ -22,6 +22,14 @@ test_tearDown(void)
     /* NO OP */
 }
 
+void
+swap(int* a, int* b)
+{
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
+
 MU_TEST(roughly_bounds)
 {
     int i, input, output, lower_bound, upper_bound;
@@ -37,6 +45,10 @@ MU_TEST(roughly_bounds)
         output = roughly(input);
         lower_bound = 3 * input / 4;
         upper_bound = 5 * input / 4;
+
+        if (input < 0) {
+            swap(&lower_bound, &upper_bound);
+        }
 
         snprintf(err_lower_bound, sizeof(err_lower_bound),
             "Output of roughly function was too low. Input: %d / Output: %d.", input, output);
