@@ -69,21 +69,21 @@ MU_TEST(timeval_minus_test)
     struct timeval *tv1, *tv2, result;
     int i;
 
-    struct test_case {
+    typedef struct test_case {
         struct timeval tv1_val;
         struct timeval tv2_val;
         struct timeval expected;
         const char* err_msg;
-    };
+    } test_case;
 
-    struct test_case tcs[] =
+    test_case tcs[] =
     {
         { {42, 10}, {42, 10}, {0, 0},      "{42, 10} - {42, 10} should be {0, 0}." },
         { {45, 10}, {42, 8},  {3, 2},      "{45, 10} - {42, 8} should be {3, 2}." },
         { {45, 10}, {42, 11}, {2, 999999}, "{45, 10} - {42, 11} should be {2, 999999}." }
     };
 
-    int num_of_cases = sizeof(tcs) / sizeof(struct test_case);
+    int num_of_cases = sizeof(tcs) / sizeof(test_case);
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
         tv2 = &tcs[i].tv2_val;
@@ -95,11 +95,76 @@ MU_TEST(timeval_minus_test)
     }
 }
 
+MU_TEST(timeval_minus_msec_test)
+{
+    struct timeval *tv1, *tv2;
+    int i;
+
+    typedef struct test_case {
+        struct timeval tv1_val;
+        struct timeval tv2_val;
+        unsigned expected;
+        const char* err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {42, 10}, {42, 10}, 0, "{42, 10} - {42, 10} should be 0ms." },
+        { {100, 20000}, {40, 5000}, 60015, "{100, 20000} - {40, 5000} should be 60015ms." },
+        { {100, 20000}, {40, 5001}, 60014, "{100, 20000} - {40, 5001} should be 60014ms." },
+        { {100, 20000}, {100, 19000}, 1, "{100, 20000} - {100, 19000} should be 1ms." },
+        { {100, 20000}, {101, 19000}, 0, "{100, 20000} - {101, 19000} should be 0ms." },
+    };
+    int num_of_cases = sizeof(tcs) / sizeof (test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        tv1 = &tcs[i].tv1_val;
+        tv2 = &tcs[i].tv2_val;
+
+        unsigned result = timeval_minus_msec(tv1, tv2);
+
+        mu_assert(result == tcs[i].expected, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(timeval_add_msec_test)
+{
+    struct timeval *tv1, result;
+    int msecs, i;
+
+    typedef struct test_case {
+        struct timeval tv1_val;
+        int msecs_val;
+        struct timeval expected;
+        const char* err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {42, 10}, 50, { 42, 50010 }, "{42, 10} + 50ms should be {42, 50010}." },
+        { {42, 990000}, 10, { 43, 0 }, "{42, 990000} + 10ms should be {43, 0}." },
+        { {42, 990000}, 20, { 43, 10000 }, "{42, 990000} + 20ms should be {43, 10000}." },
+    };
+    int num_of_cases = sizeof(tcs) / sizeof (test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        tv1 = &tcs[i].tv1_val;
+        msecs = tcs[i].msecs_val;
+
+        timeval_add_msec(&result, tv1, msecs);
+
+        mu_assert(result.tv_sec == tcs[i].expected.tv_sec, tcs[i].err_msg);
+        mu_assert(result.tv_usec == tcs[i].expected.tv_usec, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
     MU_RUN_TEST(roughly_test);
     MU_RUN_TEST(timeval_minus_test);
+    MU_RUN_TEST(timeval_minus_msec_test);
+    MU_RUN_TEST(timeval_add_msec_test);
 }
 
 int
