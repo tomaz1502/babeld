@@ -20,6 +20,8 @@ OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
 babeld: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o babeld $(OBJS) $(LDLIBS)
 
+o_files: $(OBJS)
+
 babeld.o: babeld.c version.h
 
 local.o: local.c version.h

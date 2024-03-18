@@ -11,7 +11,7 @@ OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
 all: test
 
 test: test.c
-	cd $(ROOT_DIR) && $(MAKE) LDLIBS='' && $(CC) $(CFLAGS) -o tests/test tests/test.c $(OBJS)
+	cd $(ROOT_DIR) && $(MAKE) CFLAGS+=-DTESTING LDLIBS='' o_files && $(CC) $(CFLAGS) -o tests/test tests/test.c $(OBJS)
 
 clean:
 	rm -f *.o test && cd $(ROOT_DIR) && $(MAKE) clean
