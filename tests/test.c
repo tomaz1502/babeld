@@ -84,6 +84,7 @@ MU_TEST(timeval_minus_test)
     };
 
     int num_of_cases = sizeof(tcs) / sizeof(test_case);
+
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
         tv2 = &tcs[i].tv2_val;
@@ -98,7 +99,8 @@ MU_TEST(timeval_minus_test)
 MU_TEST(timeval_minus_msec_test)
 {
     struct timeval *tv1, *tv2;
-    int i;
+    int i, num_of_cases;
+    unsigned result;
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -115,13 +117,14 @@ MU_TEST(timeval_minus_msec_test)
         { {100, 20000}, {100, 19000}, 1, "{100, 20000} - {100, 19000} should be 1ms." },
         { {100, 20000}, {101, 19000}, 0, "{100, 20000} - {101, 19000} should be 0ms." },
     };
-    int num_of_cases = sizeof(tcs) / sizeof (test_case);
+
+    num_of_cases = sizeof(tcs) / sizeof (test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
         tv2 = &tcs[i].tv2_val;
 
-        unsigned result = timeval_minus_msec(tv1, tv2);
+        result = timeval_minus_msec(tv1, tv2);
 
         mu_assert(result == tcs[i].expected, tcs[i].err_msg);
     }
@@ -130,7 +133,7 @@ MU_TEST(timeval_minus_msec_test)
 MU_TEST(timeval_add_msec_test)
 {
     struct timeval *tv1, result;
-    int msecs, i;
+    int msecs, num_of_cases, i;
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -145,7 +148,8 @@ MU_TEST(timeval_add_msec_test)
         { {42, 990000}, 10, { 43, 0 }, "{42, 990000} + 10ms should be {43, 0}." },
         { {42, 990000}, 20, { 43, 10000 }, "{42, 990000} + 20ms should be {43, 10000}." },
     };
-    int num_of_cases = sizeof(tcs) / sizeof (test_case);
+
+    num_of_cases = sizeof(tcs) / sizeof (test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
@@ -158,6 +162,40 @@ MU_TEST(timeval_add_msec_test)
     }
 }
 
+MU_TEST(timeval_compare_test)
+{
+    struct timeval *s1, *s2;
+    int result, i, num_of_cases;
+
+    typedef struct test_case {
+        struct timeval s1_val;
+        struct timeval s2_val;
+        int expected;
+        const char* err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {42, 10}, {42, 10}, 0, "{42, 10} should be equal to {42, 10}." },
+        { {42, 10}, {42, 50}, -1, "{42, 10} should be smaller than {42, 50}." },
+        { {42, 50}, {42, 10}, 1, "{42, 50} should greater than {42, 10}." },
+        { {42, 10}, {52, 10}, -1, "{42, 10} should be smaller than {52, 10}." },
+        { {52, 10}, {42, 10}, 1, "{52, 10} should be greater than {42, 10}." },
+        { {52, 10}, {42, 5}, 1, "{52, 10} should be greater than {42, 5}." },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof (test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        s1 = &tcs[i].s1_val;
+        s2 = &tcs[i].s2_val;
+
+        result = timeval_compare(s1, s2);
+
+        mu_assert(result == tcs[i].expected, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
@@ -165,6 +203,7 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(timeval_minus_test);
     MU_RUN_TEST(timeval_minus_msec_test);
     MU_RUN_TEST(timeval_add_msec_test);
+    MU_RUN_TEST(timeval_compare_test);
 }
 
 int
