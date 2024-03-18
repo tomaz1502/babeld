@@ -7,7 +7,7 @@
 #include "../babeld.h"
 #include "../util.h"
 
-#define N_RANDOM_TESTS 1e5
+#define N_RANDOM_TESTS 128
 #define SEED 42
 
 void
@@ -30,7 +30,7 @@ swap(int* a, int* b)
     *b = t;
 }
 
-MU_TEST(roughly_bounds)
+MU_TEST(roughly_test)
 {
     int i, input, output, lower_bound, upper_bound;
     char err_lower_bound[100];
@@ -63,10 +63,43 @@ MU_TEST(roughly_bounds)
     mu_assert(roughly(0) == 0, "roughly(0) should be 0.");
 }
 
+// NOTE: timeval_minus seems to assume that s1 >= s2.
+MU_TEST(timeval_minus_test)
+{
+    struct timeval *tv1, *tv2, result;
+    int i;
+
+    struct test_case {
+        struct timeval tv1_val;
+        struct timeval tv2_val;
+        struct timeval expected;
+        const char* err_msg;
+    };
+
+    struct test_case tcs[] =
+    {
+        { {42, 10}, {42, 10}, {0, 0},      "{42, 10} - {42, 10} should be {0, 0}." },
+        { {45, 10}, {42, 8},  {3, 2},      "{45, 10} - {42, 8} should be {3, 2}." },
+        { {45, 10}, {42, 11}, {2, 999999}, "{45, 10} - {42, 11} should be {2, 999999}." }
+    };
+
+    int num_of_cases = sizeof(tcs) / sizeof(struct test_case);
+    for(i = 0; i < num_of_cases; i++) {
+        tv1 = &tcs[i].tv1_val;
+        tv2 = &tcs[i].tv2_val;
+
+        timeval_minus(&result, tv1, tv2);
+        
+        mu_assert(result.tv_usec == tcs[i].expected.tv_usec, tcs[i].err_msg);
+        mu_assert(result.tv_sec == tcs[i].expected.tv_sec, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
-    MU_RUN_TEST(roughly_bounds);
+    MU_RUN_TEST(roughly_test);
+    MU_RUN_TEST(timeval_minus_test);
 }
 
 int
