@@ -356,7 +356,7 @@ MU_TEST(fromhex_test)
 {
     unsigned char *dst;
     const char *src;
-    int n, i, num_of_cases, bytes_compared;
+    int n, i, num_of_cases, dst_len;
 
 // TODO: Is there a better way?
 #define EXPECTED_MAX_SIZE 42
@@ -376,19 +376,57 @@ MU_TEST(fromhex_test)
     };
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
+
     for(i = 0; i < num_of_cases; i++) {
         src = tcs[i].src_val;
         n = tcs[i].n_val;
-        dst = malloc(n * sizeof(unsigned char));
+        dst = malloc((n / 2) * sizeof(unsigned char));
 
-        bytes_compared = fromhex(dst, src, n);
+        dst_len = fromhex(dst, src, n);
 
-        int dst_eq_exp = memcmp(dst, tcs[i].expected, bytes_compared) == 0;
-        mu_assert(dst_eq_exp, tcs[i].err_msg);
+        int dst_eq_expected = memcmp(dst, tcs[i].expected, dst_len) == 0;
+        mu_assert(dst_eq_expected, tcs[i].err_msg);
     }
 }
 
 // NOTE: Skipping do_debugf
+
+MU_TEST(in_prefix_test)
+{
+    const unsigned char *restrict prefix, *restrict address;
+    unsigned char plen;
+    int num_of_cases, i, result;
+
+#define PREFIX_MAX_SIZE 42
+#define ADDRESS_MAX_SIZE 42
+
+    typedef struct test_case {
+        const unsigned char prefix_val[PREFIX_MAX_SIZE];
+        const unsigned char address_val[ADDRESS_MAX_SIZE];
+        unsigned char plen_val;
+        int expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {42, 42}, {42, 42, 42}, 16, 1, "{42, 42} should be contained in the prefix of {42, 42, 42} of length 16 bits." },
+        { {42, 21}, {42, 42, 42}, 16, 0, "{42, 21} should not be contained in the prefix of {42, 42, 42} of length 16 bits." },
+        { {1, 2, 254}, {1, 2, 255}, 23, 1, "{1, 2, 254} should be contained in the prefix of {1, 2, 255} of length 23 bits." }
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        prefix = tcs[i].prefix_val;
+        address = tcs[i].address_val;
+        plen = tcs[i].plen_val;
+
+        result = in_prefix(prefix, address, plen);
+
+        mu_assert(result == tcs[i].expected, tcs[i].err_msg);
+    }
+}
 
 MU_TEST_SUITE(babeld_tests)
 {
@@ -404,6 +442,7 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(parse_thousands_test);
     MU_RUN_TEST(h2i_test);
     MU_RUN_TEST(fromhex_test);
+    MU_RUN_TEST(in_prefix_test);
 }
 
 int
