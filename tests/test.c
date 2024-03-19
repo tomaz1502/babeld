@@ -73,7 +73,7 @@ MU_TEST(timeval_minus_test)
         struct timeval tv1_val;
         struct timeval tv2_val;
         struct timeval expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -106,7 +106,7 @@ MU_TEST(timeval_minus_msec_test)
         struct timeval tv1_val;
         struct timeval tv2_val;
         unsigned expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -118,7 +118,7 @@ MU_TEST(timeval_minus_msec_test)
         { {100, 20000}, {101, 19000}, 0, "{100, 20000} - {101, 19000} should be 0ms." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
@@ -139,7 +139,7 @@ MU_TEST(timeval_add_msec_test)
         struct timeval tv1_val;
         int msecs_val;
         struct timeval expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -149,7 +149,7 @@ MU_TEST(timeval_add_msec_test)
         { {42, 990000}, 20, { 43, 10000 }, "{42, 990000} + 20ms should be {43, 10000}." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
@@ -171,7 +171,7 @@ MU_TEST(timeval_compare_test)
         struct timeval s1_val;
         struct timeval s2_val;
         int expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -184,7 +184,7 @@ MU_TEST(timeval_compare_test)
         { {52, 10}, {42, 5}, 1, "{52, 10} should be greater than {42, 5}." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         s1 = &tcs[i].s1_val;
@@ -205,7 +205,7 @@ MU_TEST(timeval_min_test)
         struct timeval s1_val;
         struct timeval s2_val;
         struct timeval expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -217,7 +217,7 @@ MU_TEST(timeval_min_test)
         { {41, 15}, {42, 10}, {41, 15}, "timeval_min({41, 15}, {42, 10}) should be {41, 15}." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         s1 = &tcs[i].s1_val;
@@ -240,7 +240,7 @@ MU_TEST(timeval_min_sec_test)
         struct timeval s_val;
         time_t secs_val;
         time_t secs_expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -251,7 +251,7 @@ MU_TEST(timeval_min_sec_test)
         { {0, 10}, 1024, 1024, "timeval_min_sec({0, 10}, 1024) should be {1024, _}." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         s = &tcs[i].s_val;
@@ -269,9 +269,9 @@ MU_TEST(parse_nat_test)
     int result, i, num_of_cases;
 
     typedef struct test_case {
-        const char * const string_val;
+        const char *string_val;
         int expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -281,7 +281,7 @@ MU_TEST(parse_nat_test)
         { "0", 0, "parse_nat(\"0\") should be 0." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         string = tcs[i].string_val;
@@ -300,7 +300,7 @@ MU_TEST(parse_thousands_test)
     typedef struct test_case {
         const char * const string_val;
         int expected;
-        const char* err_msg;
+        const char *err_msg;
     } test_case;
 
     test_case tcs[] =
@@ -310,7 +310,7 @@ MU_TEST(parse_thousands_test)
         { "0.1", 100, "parse_thousands(\"0.1\") should be 100." },
     };
 
-    num_of_cases = sizeof(tcs) / sizeof (test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         string = tcs[i].string_val;
@@ -320,6 +320,75 @@ MU_TEST(parse_thousands_test)
         mu_assert(result == tcs[i].expected, tcs[i].err_msg);
     }
 }
+
+MU_TEST(h2i_test)
+{
+    char c;
+    int result, i, num_of_cases;
+
+    typedef struct test_case {
+        char c_val;
+        int expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { '1', 1, "h2i('1') should be 1." },
+        { '9', 9, "h2i('9') should be 9." },
+        { 'A', 10, "h2i('A') should be 10." },
+        { 'C', 12, "h2i('C') should be 12." },
+        { 'd', 13, "h2i('d') should be 13." },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        c = tcs[i].c_val;
+
+        result = h2i(c);
+
+        mu_assert(result == tcs[i].expected, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(fromhex_test)
+{
+    unsigned char *dst;
+    const char *src;
+    int n, i, num_of_cases, bytes_compared;
+
+// TODO: Is there a better way?
+#define EXPECTED_MAX_SIZE 42
+
+    typedef struct test_case {
+        unsigned char expected[EXPECTED_MAX_SIZE];
+        const char *src_val;
+        int n_val;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {255},         "ff",     2, "fromhex(\"ff\") should be {255}." },
+        { {238, 171},    "eeab",   4, "fromhex(\"eeab\") should be {238, 171}." },
+        { {10, 42, 200}, "0A2aC8", 6, "fromhex(\"0A2aC8\") should be {10, 42, 200}." },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+    for(i = 0; i < num_of_cases; i++) {
+        src = tcs[i].src_val;
+        n = tcs[i].n_val;
+        dst = malloc(n * sizeof(unsigned char));
+
+        bytes_compared = fromhex(dst, src, n);
+
+        int dst_eq_exp = memcmp(dst, tcs[i].expected, bytes_compared) == 0;
+        mu_assert(dst_eq_exp, tcs[i].err_msg);
+    }
+}
+
+// NOTE: Skipping do_debugf
 
 MU_TEST_SUITE(babeld_tests)
 {
@@ -333,11 +402,14 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(timeval_min_sec_test);
     MU_RUN_TEST(parse_nat_test);
     MU_RUN_TEST(parse_thousands_test);
+    MU_RUN_TEST(h2i_test);
+    MU_RUN_TEST(fromhex_test);
 }
 
 int
 main(void)
 {
     MU_RUN_SUITE(babeld_tests);
+    putchar('\n');
     return MU_EXIT_CODE;
 }

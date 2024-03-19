@@ -2,7 +2,7 @@
 
 ROOT_DIR=..
 
-CFLAGS = -Os -g -Wall
+CFLAGS = -Os -g -Wall -DTESTING
 
 OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
        route.o xroute.o message.o resend.o configuration.o local.o \
