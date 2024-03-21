@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <arpa/inet.h>
 
 #include "minunit.h"
 #undef INFINITY
@@ -375,12 +376,15 @@ MU_TEST(fromhex_test)
         { {10, 42, 200}, "0A2aC8", 6, "fromhex(\"0A2aC8\") should be {10, 42, 200}." },
     };
 
+#define DST_MAX_SIZE 42
+
+    dst = malloc(DST_MAX_SIZE * sizeof(unsigned char));
+
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         src = tcs[i].src_val;
         n = tcs[i].n_val;
-        dst = malloc((n / 2) * sizeof(unsigned char));
 
         dst_len = fromhex(dst, src, n);
 
@@ -428,6 +432,98 @@ MU_TEST(in_prefix_test)
     }
 }
 
+MU_TEST(normalize_prefix_test)
+{
+    const unsigned char *restrict prefix;
+    unsigned char *restrict result;
+    unsigned char plen;
+    int num_of_cases, i, j;
+
+#define PREFIX_MAX_SIZE 42
+#define EXPECTED_MAX_SIZE 42
+#define RESULT_MAX_SIZE 42
+
+    typedef struct test_case {
+        unsigned char expected[EXPECTED_MAX_SIZE];
+        const unsigned char prefix_val[PREFIX_MAX_SIZE];
+        unsigned char plen_val;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {4, 6}, {4, 6}, 16, "normalize_prefix(ret, {4, 6}, 16) should be {4, 6}." },
+        { {1, 2, 252}, {1, 2, 255}, 22, "normalize_prefix(ret, {1, 2, 255}, 22) should be {1, 2, 252}." },
+        { {1, 1, 1, 1}, {1, 1, 1, 0}, 30, "normalize_prefix(ret, {1, 1, 1, 1}, 30) should be {1, 1, 1, 0}." },
+    };
+
+    result = malloc(RESULT_MAX_SIZE * sizeof(unsigned char));
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        prefix = tcs[i].prefix_val;
+        plen = tcs[i].plen_val;
+
+        // NOTE: I do not understand the usage of `memset` in this function
+        normalize_prefix(result, prefix, plen);
+
+        int result_ok = memcmp(result, tcs[i].expected, plen / 8) == 0;
+
+        for(j = 0; j < plen % 8; j++) {
+            int mask = 1 << (8 - j);
+            int bit_ok = (result[plen / 8] & mask) ==
+                         (tcs[i].expected[plen / 8] & mask);
+            result_ok &= bit_ok;
+        }
+        mu_assert(result_ok, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(format_address_test)
+{
+    const unsigned char *address;
+    const char *result;
+    int num_of_cases, i;
+
+#define ADDRESS_MAX_SIZE 42
+#define RESULT_MAX_SIZE 42
+
+    typedef struct test_case {
+        unsigned char address_val[ADDRESS_MAX_SIZE];
+        const char *expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          "fffe:782a:140f:370c:5a63:5505:c896:78ff",
+          "format_address({255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}) should be \"fffe:782a:140f:370c:5a63:5505:c896:78ff\"."
+        },
+        { {170, 170, 187, 187, 204, 204},
+          "aaaa:bbbb:cccc::",
+          "format_address({170, 170, 187, 187, 204, 204}) should be \"aaaa:bbbb:cccc::\"."
+        },
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128,0,0,1},
+          "128.0.0.1",
+          "format_address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128, 0, 0, 1}) should be \"128.0.0.1\"."
+        },
+    };
+
+    result = malloc(RESULT_MAX_SIZE * sizeof(unsigned char));
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        address = tcs[i].address_val;
+
+        result = format_address(address);
+
+        mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
@@ -443,6 +539,8 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(h2i_test);
     MU_RUN_TEST(fromhex_test);
     MU_RUN_TEST(in_prefix_test);
+    MU_RUN_TEST(normalize_prefix_test);
+    MU_RUN_TEST(format_address_test);
 }
 
 int
