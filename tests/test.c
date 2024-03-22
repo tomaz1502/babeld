@@ -524,6 +524,160 @@ MU_TEST(format_address_test)
     }
 }
 
+// NOTE: The only purpose of this function is to append "/`plen`" in the result of format_address?
+MU_TEST(format_prefix_test)
+{
+    unsigned char plen, *prefix;
+    const char *result;
+    int num_of_cases, i;
+
+#define PREFIX_MAX_SIZE 42
+
+    typedef struct test_case {
+        unsigned char prefix_val[PREFIX_MAX_SIZE];
+        unsigned char plen_val;
+        const char *expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          120,
+          "fffe:782a:140f:370c:5a63:5505:c896:78ff/120",
+          "format_prefix({255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, 120) should be \"fffe:782a:140f:370c:5a63:5505:c896:78ff/120\"."
+        },
+        { {170, 170, 187, 187, 204, 204},
+           50,
+          "aaaa:bbbb:cccc::/50",
+          "format_prefix({170, 170, 187, 187, 204, 204}, 50) should be \"aaaa:bbbb:cccc::/50\"."
+        },
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128,0,0,1},
+          100,
+          "128.0.0.1/4",
+          "format_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128, 0, 0, 1}, 100) should be \"128.0.0.1/4\"."
+        },
+
+    };
+    
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        plen = tcs[i].plen_val;
+        prefix = tcs[i].prefix_val;
+        
+        result = format_prefix(prefix, plen);
+
+        mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(format_eui64_test)
+{
+    unsigned char *eui;
+    const char *result;
+    int num_of_cases, i;
+
+#define EUI_MAX_SIZE 8
+
+    typedef struct test_case {
+        unsigned char eui_val[EUI_MAX_SIZE];
+        const char *expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {255, 254, 120, 42, 20, 15, 55, 12},
+          "ff:fe:78:2a:14:0f:37:0c",
+          "format_eui64({255, 254, 120, 42, 20, 15, 55, 12}) should be \"ff:fe:78:2a:14:0f:37:0c\"."
+        },
+        { {170, 170, 187, 187, 204, 204, 221, 221},
+          "aa:aa:bb:bb:cc:cc:dd:dd",
+          "format_eui64({170, 170, 187, 187, 204, 204, 221, 221}) should be \"aa:aa:bb:bb:cc:cc:dd:dd\"."
+        },
+    };
+    
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        eui = tcs[i].eui_val;
+        
+        result = format_eui64(eui);
+
+        mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(format_thousands_test)
+{
+    unsigned int value;
+    const char *result;
+    int num_of_cases, i;
+
+
+    typedef struct test_case {
+        unsigned int value_val;
+        const char *expected;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { 1024, "1.024", "format_thousands(1024) should be \"1.024\"." },
+        { 512, "0.512", "format_thousands(512) should be \"0.512\"" },
+        { 1234567, "1234.567", "format_thousands(1234567) should be \"1234.567\"" }
+    };
+    
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        value = tcs[i].value_val;
+        
+        result = format_thousands(value);
+
+        mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(parse_address_test)
+{
+    char *address;
+    unsigned char *addr_r;
+    int *af_r;
+    int rc, num_of_cases, i;
+
+#define ADDR_R_MAX_SIZE 42
+
+    typedef struct test_case {
+        char *const address_val;
+        unsigned char expected_addr_r[ADDR_R_MAX_SIZE];
+        int expected_af_r, expected_rc;
+        const char *err_msg;
+    } test_case;
+
+    addr_r = malloc(ADDR_R_MAX_SIZE * sizeof(unsigned char));
+    af_r = malloc(sizeof(int));
+
+    test_case tcs[] =
+    {
+        { "fffe:782a:140f:370c:5a63:5505:c896:78ff", {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, AF_INET6, 0, "parse_address(\"fffe:782a:140f:370c:5a63:5505:c896:78ff\") should be {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255} (AF_INET6)." },
+    };
+    
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        address = tcs[i].address_val;
+
+        rc = parse_address(address, addr_r, af_r);
+        
+        int test_ok = memcmp(addr_r, tcs[i].expected_addr_r, 16) == 0;
+        test_ok &= (tcs[i].expected_af_r == *af_r);
+        test_ok &= (tcs[i].expected_rc == rc);
+        mu_assert(test_ok, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
@@ -541,6 +695,10 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(in_prefix_test);
     MU_RUN_TEST(normalize_prefix_test);
     MU_RUN_TEST(format_address_test);
+    MU_RUN_TEST(format_prefix_test);
+    MU_RUN_TEST(format_eui64_test);
+    MU_RUN_TEST(format_thousands_test);
+    MU_RUN_TEST(parse_address_test);
 }
 
 int
