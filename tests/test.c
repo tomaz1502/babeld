@@ -436,8 +436,8 @@ MU_TEST(normalize_prefix_test)
 {
     const unsigned char *restrict prefix;
     unsigned char *restrict result;
-    unsigned char plen;
-    int num_of_cases, i, j;
+    unsigned char plen, mask;
+    int num_of_cases, i, j, test_ok, bit_ok;
 
 #define PREFIX_MAX_SIZE 42
 #define EXPECTED_MAX_SIZE 42
@@ -465,18 +465,17 @@ MU_TEST(normalize_prefix_test)
         prefix = tcs[i].prefix_val;
         plen = tcs[i].plen_val;
 
-        // NOTE: I do not understand the usage of `memset` in this function
         normalize_prefix(result, prefix, plen);
 
-        int result_ok = memcmp(result, tcs[i].expected, plen / 8) == 0;
+        test_ok = memcmp(result, tcs[i].expected, plen / 8) == 0;
 
         for(j = 0; j < plen % 8; j++) {
-            int mask = 1 << (8 - j);
-            int bit_ok = (result[plen / 8] & mask) ==
-                         (tcs[i].expected[plen / 8] & mask);
-            result_ok &= bit_ok;
+            mask = 1 << (8 - j - 1);
+            bit_ok = (result[plen / 8] & mask) ==
+                     (tcs[i].expected[plen / 8] & mask);
+            test_ok &= bit_ok;
         }
-        mu_assert(result_ok, tcs[i].err_msg);
+        mu_assert(test_ok, tcs[i].err_msg);
     }
 }
 
@@ -505,9 +504,9 @@ MU_TEST(format_address_test)
           "aaaa:bbbb:cccc::",
           "format_address({170, 170, 187, 187, 204, 204}) should be \"aaaa:bbbb:cccc::\"."
         },
-        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128,0,0,1},
-          "128.0.0.1",
-          "format_address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128, 0, 0, 1}) should be \"128.0.0.1\"."
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127,0,0,1},
+          "127.0.0.1",
+          "format_address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1}) should be \"127.0.0.1\"."
         },
     };
 
@@ -552,10 +551,10 @@ MU_TEST(format_prefix_test)
           "aaaa:bbbb:cccc::/50",
           "format_prefix({170, 170, 187, 187, 204, 204}, 50) should be \"aaaa:bbbb:cccc::/50\"."
         },
-        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128,0,0,1},
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127,0,0,1},
           100,
-          "128.0.0.1/4",
-          "format_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 128, 0, 0, 1}, 100) should be \"128.0.0.1/4\"."
+          "127.0.0.1/4",
+          "format_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1}, 100) should be \"127.0.0.1/4\"."
         },
 
     };
@@ -645,7 +644,7 @@ MU_TEST(parse_address_test)
     char *address;
     unsigned char *addr_r;
     int *af_r;
-    int rc, num_of_cases, i;
+    int rc, num_of_cases, i, test_ok;
 
 #define ADDR_R_MAX_SIZE 42
 
@@ -661,7 +660,18 @@ MU_TEST(parse_address_test)
 
     test_case tcs[] =
     {
-        { "fffe:782a:140f:370c:5a63:5505:c896:78ff", {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, AF_INET6, 0, "parse_address(\"fffe:782a:140f:370c:5a63:5505:c896:78ff\") should be {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255} (AF_INET6)." },
+        { "fffe:782a:140f:370c:5a63:5505:c896:78ff",
+          {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          AF_INET6,
+          0,
+          "parse_address(\"fffe:782a:140f:370c:5a63:5505:c896:78ff\") should be {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255} (AF_INET6)."
+        },
+        {  "127.0.0.1",
+           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1},
+           AF_INET,
+           0,
+           "parse_address(\"127.0.0.1\") should be {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1}."
+        }
     };
     
     num_of_cases = sizeof(tcs) / sizeof(test_case);
@@ -671,9 +681,92 @@ MU_TEST(parse_address_test)
 
         rc = parse_address(address, addr_r, af_r);
         
-        int test_ok = memcmp(addr_r, tcs[i].expected_addr_r, 16) == 0;
+        test_ok = memcmp(addr_r, tcs[i].expected_addr_r, 16) == 0;
         test_ok &= (tcs[i].expected_af_r == *af_r);
         test_ok &= (tcs[i].expected_rc == rc);
+        mu_assert(test_ok, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(parse_net_test)
+{
+    const char *net;
+    unsigned char *prefix_r, *plen_r, mask;
+    int *af_r, rc, num_of_cases, i, j, test_ok;
+
+#define NET_MAX_SIZE 64
+#define PREFIX_MAX_SIZE 42
+
+    typedef struct test_case {
+        char *const net_val;
+        unsigned char expected_prefix_r[PREFIX_MAX_SIZE];
+        unsigned char expected_plen_r;
+        int expected_af_r, expected_rc;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        {
+            .net_val           = "default",
+            .expected_prefix_r = {},
+            .expected_plen_r   = 0,
+            .expected_af_r     = AF_INET6,
+            .expected_rc       = 0,
+            .err_msg           = "parse_net(\"default\") should be all zeroes (AF_INET6)."
+        },
+        { "127.0.0.1/2",
+          {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 64, 0, 0, 0},
+          98,
+          AF_INET,
+          0,
+          "parse_net(\"127.0.0.1/2\") should be {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 64, 0, 0, 0} (AF_INET)." },
+        { "127.0.0.1",
+           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1},
+           128,
+           AF_INET,
+           0,
+           "parse_net(\"127.0.0.1\") should be {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1} (AF_INET)."
+        },
+        { "fffe:782a:140f:370c:5a63:5505:c896:78ff",
+          {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          128,
+          AF_INET6,
+          0,
+          "parse_address(\"fffe:782a:140f:370c:5a63:5505:c896:78ff\") should be {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255} (AF_INET6)."
+        },
+        { "fffe:782a:140f:370c:5a63:5505:c896:78ff/60",
+          {255, 254, 120, 42, 20, 15, 55, 8, 0, 0, 0, 0, 0, 0, 0, 0},
+          60,
+          AF_INET6,
+          0,
+          "parse_address(\"fffe:782a:140f:370c:5a63:5505:c896:78ff\") should be {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255} (AF_INET6)."
+        },
+    };
+
+
+    net = malloc(sizeof(char) * NET_MAX_SIZE);
+    prefix_r = malloc(sizeof(unsigned char) * PREFIX_MAX_SIZE);
+    plen_r = malloc(sizeof(unsigned char));
+    af_r = malloc(sizeof(int));
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        net = tcs[i].net_val;
+
+        rc = parse_net(net, prefix_r, plen_r, af_r);
+    
+        test_ok = (*plen_r == tcs[i].expected_plen_r);
+        test_ok &= (*af_r == tcs[i].expected_af_r);
+        test_ok &= (rc == tcs[i].expected_rc);
+        test_ok &= (memcmp(tcs[i].expected_prefix_r, prefix_r, tcs[i].expected_plen_r / 8) == 0);
+        for(j = 0; j < tcs[i].expected_plen_r % 8; ++j) {
+            mask = 1 << (8 - j - 1);
+            test_ok &= ((tcs[i].expected_prefix_r[tcs[i].expected_plen_r / 8] & mask) ==
+                        (prefix_r[tcs[i].expected_plen_r / 8] & mask));
+        }
+
         mu_assert(test_ok, tcs[i].err_msg);
     }
 }
@@ -699,6 +792,7 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(format_eui64_test);
     MU_RUN_TEST(format_thousands_test);
     MU_RUN_TEST(parse_address_test);
+    MU_RUN_TEST(parse_net_test);
 }
 
 int
