@@ -68,7 +68,7 @@ MU_TEST(roughly_test)
 MU_TEST(timeval_minus_test)
 {
     struct timeval *tv1, *tv2, result;
-    int i;
+    int i, num_of_cases;
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -84,7 +84,7 @@ MU_TEST(timeval_minus_test)
         { {45, 10}, {42, 11}, {2, 999999}, "{45, 10} - {42, 11} should be {2, 999999}." }
     };
 
-    int num_of_cases = sizeof(tcs) / sizeof(test_case);
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; i++) {
         tv1 = &tcs[i].tv1_val;
@@ -771,6 +771,116 @@ MU_TEST(parse_net_test)
     }
 }
 
+MU_TEST(parse_eui64_test)
+{
+    const char *eui;
+    unsigned char eui_r[8];
+    int i, num_of_cases, test_ok, rc;
+
+    typedef struct test_case {
+        char *eui_val;
+        unsigned char expected_eui_r[8];
+        int expected_rc;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { "ff-34-42-ce-14-1f-ab-cc",
+          { 255, 52, 66, 206, 20, 31, 171, 204 },
+          0,
+          "parse_eui64(\"ff-34-42-ce-14-1f-ab-cc\") should be { 255, 52, 66, 206, 20, 31, 171, 204 }."
+        },
+        { "0b:ae:3d:31:42:00:ac:c5",
+          { 11, 174, 61, 49, 66, 0, 172, 197 },
+          0,
+          "parse_eui64(\"0b:ae:3d:31:42:00:ac:c5\") should be { 11, 174, 61, 49, 66, 0, 172, 197 }."
+        },
+        { "0b:ae:3d:31:42:00",
+          { 11, 174, 61, 255, 254, 49, 66, 0 },
+          0,
+          "parse_eui64(\"0b:ae:3d:31:42:00\") should be { 11, 174, 61, 255, 254, 49, 66, 0 }."
+        },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; i++) {
+        eui = tcs[i].eui_val;
+
+        rc = parse_eui64(eui, eui_r);
+        
+        test_ok = (rc == tcs[i].expected_rc);
+        test_ok &= (memcmp(eui_r, tcs[i].expected_eui_r, 8) == 0);
+        mu_assert(test_ok, tcs[i].err_msg);
+    }
+}
+
+MU_TEST(wait_for_fd_test)
+{
+
+}
+
+MU_TEST(martian_prefix_test)
+{
+    unsigned char *prefix;
+    int i, num_of_cases, plen, rc;
+
+#undef PREFIX_MAX_SIZE
+#define PREFIX_MAX_SIZE 16
+
+    typedef struct test_case {
+        unsigned char prefix_val[PREFIX_MAX_SIZE];
+        int plen_val, expected_rc;
+        const char *err_msg;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1},
+          104,
+          1,
+          "martian_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1}, 104) should be true."
+        },
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0xE2, 42, 42, 42},
+          100,
+          1,
+          "martian_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 224, 42, 42, 42}, 100) should be true."
+        },
+        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+          128,
+          1,
+          "martian_prefix({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, 128) should be true."
+        },
+        { {42, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          128,
+          0,
+          "martian_prefix({42, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, 128) should be false."
+        },
+        { {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          128,
+          1,
+          "martian_prefix({42, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, 128) should be false."
+        },
+        { {254, 128, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+          128,
+          1,
+          "martian_prefix({42, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255}, 128) should be false."
+        },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        prefix = tcs[i].prefix_val;
+        plen = tcs[i].plen_val;
+
+        rc = martian_prefix(prefix, plen);
+
+        mu_assert(rc == tcs[i].expected_rc, tcs[i].err_msg);
+    }
+}
+
 MU_TEST_SUITE(babeld_tests)
 {
     MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
@@ -793,6 +903,9 @@ MU_TEST_SUITE(babeld_tests)
     MU_RUN_TEST(format_thousands_test);
     MU_RUN_TEST(parse_address_test);
     MU_RUN_TEST(parse_net_test);
+    MU_RUN_TEST(parse_eui64_test);
+    MU_RUN_TEST(wait_for_fd_test);
+    MU_RUN_TEST(martian_prefix_test);
 }
 
 int
