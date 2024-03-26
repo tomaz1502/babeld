@@ -818,7 +818,9 @@ MU_TEST(parse_eui64_test)
 
 MU_TEST(wait_for_fd_test)
 {
-
+    int rc;
+    rc = wait_for_fd(1, STDOUT_FILENO, 100);
+    mu_assert(rc == 1, "STDOUT should be able to write\n");
 }
 
 MU_TEST(martian_prefix_test)
