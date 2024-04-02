@@ -10,10 +10,10 @@
 
 #define N_RANDOM_TESTS 128
 #define SEED 42
-#define ERR_MSG_MAX_SIZE 150
-#define ARR_MAX_SIZE 50
-// TODO: replace other defines by ADDRESS_ARRAY_SIZE
+#define ERR_MSG_MAX_SIZE 400
+#define ARR_MAX_SIZE 200
 #define ADDRESS_ARRAY_SIZE 16
+#define EUI_SIZE 8
 
 void
 test_setup(void)
@@ -35,22 +35,21 @@ swap(int* a, int* b)
     *b = t;
 }
 
-char* str_of_array(const unsigned char* const arr, size_t len) {
-    static char str[4][ARR_MAX_SIZE] = {0};
+char*
+str_of_array(const unsigned char* const arr, size_t len) {
+    static char str[4][ARR_MAX_SIZE];
     static int i = 0;
     size_t j;
     int pt;
 
     i = (i + 1) % 4;
 
-    sprintf(str[i], "{ ");
-    pt = 2;
+    pt = sprintf(str[i], "{ ");
     for(j = 0; j < len - 1; ++j) {
-        sprintf(str[i] + pt, "0x%02x, ", arr[j]);
-        pt += 6;
+        pt += sprintf(str[i] + pt, "0x%02x, ", arr[j]);
     }
-
-    sprintf(str[i] + pt, "0x%02x }", arr[len - 1]);
+    pt += sprintf(str[i] + pt, "0x%02x }", arr[len - 1]);
+    str[i][pt] = '\0';
 
     return str[i];
 }
@@ -58,8 +57,8 @@ char* str_of_array(const unsigned char* const arr, size_t len) {
 MU_TEST(roughly_test)
 {
     int i, input, output, lower_bound, upper_bound;
-    char err_lower_bound[100];
-    char err_upper_bound[100];
+    char err_lower_bound[ERR_MSG_MAX_SIZE];
+    char err_upper_bound[ERR_MSG_MAX_SIZE];
 
     for (i = 0; i < N_RANDOM_TESTS; i++) {
         input = rand() % 1024;
@@ -472,25 +471,20 @@ MU_TEST(fromhex_test)
     int n, i, num_of_cases, dst_len;
     char err_msg[ERR_MSG_MAX_SIZE];
 
-// TODO: Is there a better way?
-#define EXPECTED_MAX_SIZE 42
-
     typedef struct test_case {
-        unsigned char expected[EXPECTED_MAX_SIZE];
         const char *src_val;
+        unsigned char expected[ADDRESS_ARRAY_SIZE];
         int n_val;
     } test_case;
 
     test_case tcs[] =
     {
-        { {0xff},         "ff", 2 },
-        { {0xee, 0xab},    "eeab", 4 },
-        { {0x0a, 0x2a, 0xc8}, "0A2aC8", 6 }
+        { "ff",     {0xff},             2 },
+        { "eeab",   {0xee, 0xab},       4 },
+        { "0A2aC8", {0x0a, 0x2a, 0xc8}, 6 }
     };
 
-#define DST_MAX_SIZE 42
-
-    dst = malloc(DST_MAX_SIZE * sizeof(unsigned char));
+    dst = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -521,13 +515,10 @@ MU_TEST(in_prefix_test)
     int num_of_cases, i, result;
     char err_msg[ERR_MSG_MAX_SIZE];
 
-#define PREFIX_MAX_SIZE 16
-#define ADDRESS_MAX_SIZE 16
-
     typedef struct test_case {
-        const unsigned char prefix_val[PREFIX_MAX_SIZE];
+        const unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
         int prefix_val_length;
-        const unsigned char address_val[ADDRESS_MAX_SIZE];
+        const unsigned char address_val[ADDRESS_ARRAY_SIZE];
         int address_val_length;
         unsigned char plen_val;
         int expected;
@@ -570,13 +561,9 @@ MU_TEST(normalize_prefix_test)
     int num_of_cases, i, j, test_ok, bit_ok;
     char err_msg[ERR_MSG_MAX_SIZE];
 
-#define PREFIX_MAX_SIZE 42
-#define EXPECTED_MAX_SIZE 42
-#define RESULT_MAX_SIZE 16
-
     typedef struct test_case {
-        unsigned char expected[EXPECTED_MAX_SIZE];
-        const unsigned char prefix_val[PREFIX_MAX_SIZE];
+        unsigned char expected[ADDRESS_ARRAY_SIZE];
+        const unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
         int prefix_size;
         unsigned char plen_val;
     } test_case;
@@ -588,7 +575,7 @@ MU_TEST(normalize_prefix_test)
         { {0x1, 0x1, 0x1, 0x1}, {0x1, 0x1, 0x1, 0x0}, 4, 30 }
     };
 
-    result = malloc(RESULT_MAX_SIZE * sizeof(unsigned char));
+    result = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -625,28 +612,29 @@ MU_TEST(format_address_test)
     int num_of_cases, i;
     char err_msg[ERR_MSG_MAX_SIZE];
 
-#define ADDRESS_MAX_SIZE 16
-#define RESULT_MAX_SIZE 16
-
     typedef struct test_case {
-        unsigned char address_val[ADDRESS_MAX_SIZE];
+        unsigned char address_val[ADDRESS_ARRAY_SIZE];
+        int address_length;
         const char *expected;
     } test_case;
 
     test_case tcs[] =
     {
-        { {255, 254, 120, 42, 20, 15, 55, 12, 90, 99, 85, 5, 200, 150, 120, 255},
+        { {0xff, 0xfe, 0x78, 0x2a, 0x14, 0xf, 0x37, 0xc, 0x5a, 0x63, 0x55, 0x5, 0xc8, 0x96, 0x78, 0xff},
+          16,
           "fffe:782a:140f:370c:5a63:5505:c896:78ff",
         },
-        { {170, 170, 187, 187, 204, 204},
+        { {0xaa, 0xaa, 0xbb, 0xbb, 0xcc, 0xcc},
+          6,
           "aaaa:bbbb:cccc::",
         },
-        { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127,0,0,1},
+        { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0x7f, 0x0, 0x0, 0x1},
+          16,
           "127.0.0.1",
         },
     };
 
-    result = malloc(RESULT_MAX_SIZE * sizeof(unsigned char));
+    result = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -658,7 +646,7 @@ MU_TEST(format_address_test)
         sprintf(
             err_msg,
             "format_address(%s) = %s, expected %s",
-            str_of_array(address, 16),
+            str_of_array(address, tcs[i].address_length),
             result,
             tcs[i].expected
         );
@@ -672,11 +660,10 @@ MU_TEST(format_prefix_test)
     unsigned char plen, *prefix;
     const char *result;
     int num_of_cases, i;
-
-#define PREFIX_MAX_SIZE 42
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
-        unsigned char prefix_val[PREFIX_MAX_SIZE];
+        unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
         unsigned char plen_val;
         const char *expected;
     } test_case;
@@ -706,7 +693,15 @@ MU_TEST(format_prefix_test)
         
         result = format_prefix(prefix, plen);
 
-        /* mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg); */
+        sprintf(
+            err_msg,
+            "format_prefix(%s, %u) = %s, expected: %s.",
+            str_of_array(prefix, 3),
+            plen,
+            result,
+            tcs[i].expected
+        );
+        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
     }
 }
 
@@ -715,20 +710,22 @@ MU_TEST(format_eui64_test)
     unsigned char *eui;
     const char *result;
     int num_of_cases, i;
-
-#define EUI_MAX_SIZE 8
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
-        unsigned char eui_val[EUI_MAX_SIZE];
+        unsigned char eui_val[EUI_SIZE];
+        size_t eui_val_length;
         const char *expected;
     } test_case;
 
     test_case tcs[] =
     {
         { {255, 254, 120, 42, 20, 15, 55, 12},
+          8,
           "ff:fe:78:2a:14:0f:37:0c",
         },
         { {170, 170, 187, 187, 204, 204, 221, 221},
+          8,
           "aa:aa:bb:bb:cc:cc:dd:dd",
         },
     };
@@ -740,7 +737,14 @@ MU_TEST(format_eui64_test)
         
         result = format_eui64(eui);
 
-        /* mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg); */
+        sprintf(
+            err_msg,
+            "format_eui64(%s) = %s, expected: %s.",
+            str_of_array(eui, tcs[i].eui_val_length),
+            result,
+            tcs[i].expected
+        );
+        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
     }
 }
 
@@ -749,7 +753,7 @@ MU_TEST(format_thousands_test)
     unsigned int value;
     const char *result;
     int num_of_cases, i;
-
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned int value_val;
@@ -770,7 +774,14 @@ MU_TEST(format_thousands_test)
         
         result = format_thousands(value);
 
-        /* mu_assert(strcmp(result, tcs[i].expected) == 0, tcs[i].err_msg); */
+        sprintf(
+            err_msg,
+            "format_thousands(%d) = %s, expected: %s.",
+            value,
+            result,
+            tcs[i].expected
+        );
+        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
     }
 }
 
@@ -780,16 +791,15 @@ MU_TEST(parse_address_test)
     unsigned char *addr_r;
     int *af_r;
     int rc, num_of_cases, i, test_ok;
-
-#define ADDR_R_MAX_SIZE 42
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         char *const address_val;
-        unsigned char expected_addr_r[ADDR_R_MAX_SIZE];
+        unsigned char expected_addr_r[ADDRESS_ARRAY_SIZE];
         int expected_af_r, expected_rc;
     } test_case;
 
-    addr_r = malloc(ADDR_R_MAX_SIZE * sizeof(unsigned char));
+    addr_r = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
     af_r = malloc(sizeof(int));
 
     test_case tcs[] =
@@ -799,10 +809,10 @@ MU_TEST(parse_address_test)
           AF_INET6,
           0,
         },
-        {  "127.0.0.1",
-           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1},
-           AF_INET,
-           0,
+        { "127.0.0.1",
+          {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 127, 0, 0, 1},
+          AF_INET,
+          0,
         }
     };
     
@@ -816,7 +826,15 @@ MU_TEST(parse_address_test)
         test_ok = memcmp(addr_r, tcs[i].expected_addr_r, 16) == 0;
         test_ok &= (tcs[i].expected_af_r == *af_r);
         test_ok &= (tcs[i].expected_rc == rc);
-        /* mu_assert(test_ok, tcs[i].err_msg); */
+
+        sprintf(
+            err_msg,
+            "parse_address(%s) = %s, expected: %s.",
+            address,
+            str_of_array(addr_r, ADDRESS_ARRAY_SIZE),
+            str_of_array(tcs[i].expected_addr_r, ADDRESS_ARRAY_SIZE)
+        );
+        mu_assert(test_ok, err_msg);
     }
 }
 
@@ -825,25 +843,25 @@ MU_TEST(parse_net_test)
     const char *net;
     unsigned char *prefix_r, *plen_r, mask;
     int *af_r, rc, num_of_cases, i, j, test_ok;
+    char err_msg[ERR_MSG_MAX_SIZE];
 
-#define NET_MAX_SIZE 64
-#define PREFIX_MAX_SIZE 42
+// 16 + 4 for prefix annotation
+#define NET_MAX_SIZE 20
 
     typedef struct test_case {
         char *const net_val;
-        unsigned char expected_prefix_r[PREFIX_MAX_SIZE];
+        unsigned char expected_prefix_r[ADDRESS_ARRAY_SIZE];
         unsigned char expected_plen_r;
         int expected_af_r, expected_rc;
     } test_case;
 
     test_case tcs[] =
     {
-        {
-            .net_val           = "default",
-            .expected_prefix_r = {},
-            .expected_plen_r   = 0,
-            .expected_af_r     = AF_INET6,
-            .expected_rc       = 0,
+        { "default",
+          {},
+          0,
+          AF_INET6,
+          0,
         },
         { "127.0.0.1/2",
           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 64, 0, 0, 0},
@@ -873,7 +891,7 @@ MU_TEST(parse_net_test)
 
 
     net = malloc(sizeof(char) * NET_MAX_SIZE);
-    prefix_r = malloc(sizeof(unsigned char) * PREFIX_MAX_SIZE);
+    prefix_r = malloc(sizeof(unsigned char) * ADDRESS_ARRAY_SIZE);
     plen_r = malloc(sizeof(unsigned char));
     af_r = malloc(sizeof(int));
 
@@ -894,19 +912,27 @@ MU_TEST(parse_net_test)
                         (prefix_r[tcs[i].expected_plen_r / 8] & mask));
         }
 
-        /* mu_assert(test_ok, tcs[i].err_msg); */
+        sprintf(
+            err_msg,
+            "parse_net(%s) = %s, expected: %s.",
+            net,
+            str_of_array(prefix_r, ADDRESS_ARRAY_SIZE),
+            str_of_array(tcs[i].expected_prefix_r, ADDRESS_ARRAY_SIZE)
+        );
+        mu_assert(test_ok, err_msg);
     }
 }
 
 MU_TEST(parse_eui64_test)
 {
     const char *eui;
-    unsigned char eui_r[8];
+    unsigned char eui_r[EUI_SIZE];
     int i, num_of_cases, test_ok, rc;
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         char *eui_val;
-        unsigned char expected_eui_r[8];
+        unsigned char expected_eui_r[EUI_SIZE];
         int expected_rc;
     } test_case;
 
@@ -934,8 +960,16 @@ MU_TEST(parse_eui64_test)
         rc = parse_eui64(eui, eui_r);
         
         test_ok = (rc == tcs[i].expected_rc);
-        test_ok &= (memcmp(eui_r, tcs[i].expected_eui_r, 8) == 0);
-        /* mu_assert(test_ok, tcs[i].err_msg); */
+        test_ok &= (memcmp(eui_r, tcs[i].expected_eui_r, EUI_SIZE) == 0);
+
+        sprintf(
+            err_msg,
+            "parse_eui64(%s) = %s, expected: %s.",
+            eui,
+            str_of_array(eui_r, EUI_SIZE),
+            str_of_array(tcs[i].expected_eui_r, EUI_SIZE)
+        );
+        mu_assert(test_ok, err_msg);
     }
 }
 
@@ -950,12 +984,10 @@ MU_TEST(martian_prefix_test)
 {
     unsigned char *prefix;
     int i, num_of_cases, plen, rc;
-
-#undef PREFIX_MAX_SIZE
-#define PREFIX_MAX_SIZE 16
+    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
-        unsigned char prefix_val[PREFIX_MAX_SIZE];
+        unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
         int plen_val, expected_rc;
     } test_case;
 
@@ -995,7 +1027,15 @@ MU_TEST(martian_prefix_test)
 
         rc = martian_prefix(prefix, plen);
 
-        /* mu_assert(rc == tcs[i].expected_rc, tcs[i].err_msg); */
+        sprintf(
+            err_msg,
+            "martian_prefix(%s, %d) = %d, expected: %d.",
+            str_of_array(prefix, ADDRESS_ARRAY_SIZE),
+            plen,
+            rc,
+            tcs[i].expected_rc
+        );
+        mu_assert(rc == tcs[i].expected_rc, err_msg);
     }
 }
 
