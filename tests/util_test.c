@@ -38,13 +38,13 @@ THE SOFTWARE.
 #define EUI_SIZE 8
 
 void
-test_setup(void)
+util_test_setup(void)
 {
     srand(SEED);
 }
 
 void
-test_tearDown(void)
+util_test_tear_down(void)
 {
     /* NO OP */
 }
@@ -1061,9 +1061,9 @@ MU_TEST(martian_prefix_test)
     }
 }
 
-MU_TEST_SUITE(babeld_tests)
+MU_TEST_SUITE(util_test_suite)
 {
-    MU_SUITE_CONFIGURE(&test_setup, &test_tearDown);
+    MU_SUITE_CONFIGURE(&util_test_setup, &util_test_tear_down);
     MU_RUN_TEST(roughly_test);
     MU_RUN_TEST(timeval_minus_test);
     MU_RUN_TEST(timeval_minus_msec_test);
@@ -1089,9 +1089,11 @@ MU_TEST_SUITE(babeld_tests)
 }
 
 int
-main(void)
-{
-    MU_RUN_SUITE(babeld_tests);
-    putchar('\n');
-    return MU_EXIT_CODE;
+run_util_tests(void) {
+  printf("--------------------------------------------\n");
+  printf("Running tests for util.c.\n");
+  printf("--------------------------------------------\n");
+  MU_RUN_SUITE(util_test_suite);
+  MU_REPORT();
+  return MU_EXIT_CODE;
 }
