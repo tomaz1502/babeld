@@ -106,7 +106,7 @@ add_key(char *id, int type, int len, unsigned char *value)
     return key;
 }
 
-static int
+int
 compute_hmac(const unsigned char *src, const unsigned char *dst,
              const unsigned char *packet_header,
              const unsigned char *body, int bodylen, struct key *key,
@@ -239,7 +239,7 @@ add_hmac(struct buffered *buf, struct interface *ifp,
 }
 
 
-static int
+int
 compare_hmac(const unsigned char *src, const unsigned char *dst,
              const unsigned char *packet, int bodylen,
              const unsigned char *hmac, int hmaclen,
