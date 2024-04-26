@@ -34,12 +34,12 @@ swap(int* a, int* b)
 
 char*
 str_of_array(const unsigned char* const arr, int len) {
-    static char str[4][ARR_MAX_SIZE];
+    static char str[8][ARR_MAX_SIZE];
     static int i = 0;
     int j;
     int pt;
 
-    i = (i + 1) % 4;
+    i = (i + 1) % 8;
 
     pt = sprintf(str[i], "{ ");
     for(j = 0; j < len - 1; ++j) {

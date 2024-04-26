@@ -20,9 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#define ERR_MSG_MAX_SIZE 600
+#define ERR_MSG_MAX_SIZE 1500
 #define ADDRESS_ARRAY_SIZE 16
-#define ARR_MAX_SIZE 200
+#define ARR_MAX_SIZE 400
 
 void swap(int *a, int *b);
 char* str_of_array(const unsigned char* const arr, int len);
