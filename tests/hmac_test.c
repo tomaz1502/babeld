@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include <netinet/in.h>
 
 #include "minunit.h"
+#include "test_utilities.h"
 #include "../rfc6234/sha.h"
 #include "../BLAKE2/ref/blake2.h"
 
@@ -35,35 +36,11 @@ THE SOFTWARE.
 #include "../hmac.h"
 #include "../configuration.h"
 
-#define ERR_MSG_MAX_SIZE 700
-#define ADDRESS_ARRAY_SIZE 16
 #define PACKET_HEADER_SIZE 4
 // TODO: is this correct?
 #define MAX_PACKET_BODYLEN 500
 #define HMAC_MAX_SIZE 32
 #define KEY_MAX_SIZE 64
-#define ARR_MAX_SIZE 200
-
-// Duplicated for now
-// TODO: create test_utilities.h
-char*
-str_of_array2(const unsigned char* const arr, size_t len) {
-    static char str[4][ARR_MAX_SIZE];
-    static int i = 0;
-    size_t j;
-    int pt;
-
-    i = (i + 1) % 4;
-
-    pt = sprintf(str[i], "{ ");
-    for(j = 0; j < len - 1; ++j) {
-        pt += sprintf(str[i] + pt, "0x%02x, ", arr[j]);
-    }
-    pt += sprintf(str[i] + pt, "0x%02x }", arr[len - 1]);
-    str[i][pt] = '\0';
-
-    return str[i];
-}
 
 void
 hmac_test_setup(void)
@@ -126,8 +103,8 @@ MU_TEST(compute_hmac_test)
 		sprintf(
 			err_msg,
 			"\ncompute_hmac() = %s\nexpected hmac: %s.",
-			str_of_array2(hmac, 32),
-			str_of_array2(tcs[i].hmac_expected, 32)
+			str_of_array(hmac, 32),
+			str_of_array(tcs[i].hmac_expected, 32)
 		);
 		hmac_len = tcs[i].key_val.type == AUTH_TYPE_SHA256 ? 32 : 16;
 		mu_assert(memcmp(hmac, tcs[i].hmac_expected, hmac_len) == 0, err_msg);
