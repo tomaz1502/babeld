@@ -26,15 +26,13 @@ THE SOFTWARE.
 #include <arpa/inet.h>
 
 #include "minunit.h"
+#include "test_utilities.h"
 #undef INFINITY
 #include "../babeld.h"
 #include "../util.h"
 
 #define N_RANDOM_TESTS 128
 #define SEED 42
-#define ERR_MSG_MAX_SIZE 400
-#define ARR_MAX_SIZE 200
-#define ADDRESS_ARRAY_SIZE 16
 #define EUI_SIZE 8
 
 void
@@ -47,33 +45,6 @@ void
 util_test_tear_down(void)
 {
     /* NO OP */
-}
-
-void
-swap(int* a, int* b)
-{
-    int t = *a;
-    *a = *b;
-    *b = t;
-}
-
-char*
-str_of_array(const unsigned char* const arr, size_t len) {
-    static char str[4][ARR_MAX_SIZE];
-    static int i = 0;
-    size_t j;
-    int pt;
-
-    i = (i + 1) % 4;
-
-    pt = sprintf(str[i], "{ ");
-    for(j = 0; j < len - 1; ++j) {
-        pt += sprintf(str[i] + pt, "0x%02x, ", arr[j]);
-    }
-    pt += sprintf(str[i] + pt, "0x%02x }", arr[len - 1]);
-    str[i][pt] = '\0';
-
-    return str[i];
 }
 
 MU_TEST(roughly_test)
