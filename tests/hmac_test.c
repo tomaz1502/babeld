@@ -83,7 +83,7 @@ MU_TEST(compute_hmac_test)
 	int i, num_of_cases, bodylen;
 	char err_msg[ERR_MSG_MAX_SIZE];
 	struct key *key;
-	int hmac_len, rc;
+	int hmac_len;
 
 	typedef struct test_case {
 		unsigned char src_val[ADDRESS_ARRAY_SIZE];
@@ -112,8 +112,7 @@ MU_TEST(compute_hmac_test)
 	};
 
 	hmac = malloc(HMAC_MAX_SIZE * sizeof(unsigned char));
-
-    num_of_cases = sizeof(tcs) / sizeof(test_case);
+	num_of_cases = sizeof(tcs) / sizeof(test_case);
 	for(i = 0; i < num_of_cases; ++i) {
 		src = tcs[i].src_val;
 		dst = tcs[i].dst_val;
@@ -122,8 +121,7 @@ MU_TEST(compute_hmac_test)
 		bodylen = tcs[i].bodylen_val;
 		key = &tcs[i].key_val;
 
-		rc = compute_hmac(src, dst, packet_header, body, bodylen, key, hmac);
-		printf("rc = %d\n", rc);
+		compute_hmac(src, dst, packet_header, body, bodylen, key, hmac);
 
 		sprintf(
 			err_msg,
@@ -140,7 +138,6 @@ MU_TEST_SUITE(hmac_test_suite)
 {
 	MU_SUITE_CONFIGURE(&hmac_test_setup, &hmac_test_tearDown);
 	MU_RUN_TEST(compute_hmac_test);
-	MU_REPORT();
 }
 
 int
