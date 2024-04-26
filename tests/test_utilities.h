@@ -24,5 +24,5 @@ THE SOFTWARE.
 #define ADDRESS_ARRAY_SIZE 16
 #define ARR_MAX_SIZE 200
 
-void swap(int*, int*);
-char* str_of_array(const unsigned char* const, int);
+void swap(int *a, int *b);
+char* str_of_array(const unsigned char* const arr, int len);
