@@ -18,4 +18,4 @@ util_test.o: util_test.c util_test.h
 	cd $(ROOT_DIR) && $(MAKE) CFLAGS+=-DTESTING LDLIBS='' o_files && $(CC) $(CFLAGS) -c -o tests/util_test.o tests/util_test.c $(OBJS)
 
 clean:
-	rm -f *.o && cd $(ROOT_DIR) && $(MAKE) clean
+	rm -f main *.o && cd $(ROOT_DIR) && $(MAKE) clean

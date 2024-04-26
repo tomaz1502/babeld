@@ -5,6 +5,5 @@ int
 main(void) {
     run_util_tests();
     run_hmac_tests();
-
     return 0;
 }
