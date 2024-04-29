@@ -4,3 +4,6 @@
 [submodule "BLAKE2"]
 	path = BLAKE2
 	url = https://github.com/BLAKE2/BLAKE2
+[submodule "tests/Mimick"]
+	path = tests/Mimick
+	url = git@github.com:Snaipe/Mimick.git

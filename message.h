@@ -62,6 +62,10 @@ extern int split_horizon;
 
 extern unsigned char packet_header[4];
 
+struct neighbour *
+preparse_packet(const unsigned char *from, struct interface *ifp,
+                const unsigned char *body, int bodylen,
+                const unsigned char *to);
 void parse_packet(const unsigned char *from, struct interface *ifp,
                   const unsigned char *packet, int packetlen,
                   const unsigned char *to);

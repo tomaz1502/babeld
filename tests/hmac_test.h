@@ -1,1 +1,1 @@
-void run_hmac_tests(void);
+int run_hmac_tests(void);

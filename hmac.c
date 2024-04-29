@@ -115,6 +115,34 @@ compute_hmac(const unsigned char *src, const unsigned char *dst,
     unsigned char port[2];
     int rc;
 
+	/* printf("Hello from compute_hmac\n"); */
+	/* printf(" -> src:\n "); */
+	/* for (int i = 0; i < 16; i++) */
+	/* 	printf(" %u ", src[i]); */
+	/* putchar('\n'); */
+	/* printf(" -> dst:\n "); */
+	/* for (int i = 0; i < 16; i++) */
+	/* 	printf(" %u ", dst[i]); */
+	/* putchar('\n'); */
+	/* printf(" -> packet header:\n "); */
+	/* printf(" %u %u %u %u \n", packet_header[0], packet_header[1], packet_header[2], packet_header[3]); */
+	/* printf(" -> key:\n "); */
+	/* for (int i = 0; i < key->len; i++) */
+	/* 	printf(" %u ", key->value[i]); */
+	/* printf("key->id = %s\n", key->id); */
+	/* printf("key->type = %d\n", key->type); */
+	/* printf("key->len = %d\n", key->len); */
+	/* printf("key->ref_count = %hu\n", key->ref_count); */
+	/* putchar('\n'); */
+	/* printf(" -> bodylen = %d\n", bodylen); */
+	/* printf(" -> body:\n "); */
+	/* for (int i = 0; i < bodylen; i++) */
+	/* 	printf(" %u ", body[i]); */
+	/* putchar('\n'); */
+	/* printf("protocol_port: %d\n", protocol_port); */
+	printf("Hello, world!\n");
+
+
     DO_HTONS(port, (unsigned short)protocol_port);
     switch(key->type) {
     case AUTH_TYPE_SHA256: {
@@ -169,6 +197,10 @@ compute_hmac(const unsigned char *src, const unsigned char *dst,
         rc = SHA256Result(&outer, hmac_return);
         if(rc < 0)
             return -1;
+		/* printf(" -> hmac_return:\n "); */
+		/* for (int i = 0; i < 32; i++) */
+		/* 	printf(" %u ", hmac_return[i]); */
+		/* putchar('\n'); */
         return 32;
     }
     case AUTH_TYPE_BLAKE2S128: {

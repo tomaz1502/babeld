@@ -429,7 +429,7 @@ network_address(int ae, const unsigned char *a, unsigned int len,
     return network_prefix(ae, -1, 0, a, NULL, len, a_r);
 }
 
-static struct neighbour *
+struct neighbour *
 preparse_packet(const unsigned char *from, struct interface *ifp,
                 const unsigned char *body, int bodylen,
                 const unsigned char *to)
