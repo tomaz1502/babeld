@@ -106,6 +106,8 @@ add_key(char *id, int type, int len, unsigned char *value)
     return key;
 }
 
+int foo(int x) { return x + 1; }
+
 int
 compute_hmac(const unsigned char *src, const unsigned char *dst,
              const unsigned char *packet_header,
@@ -140,7 +142,7 @@ compute_hmac(const unsigned char *src, const unsigned char *dst,
 	/* 	printf(" %u ", body[i]); */
 	/* putchar('\n'); */
 	/* printf("protocol_port: %d\n", protocol_port); */
-	printf("Hello, world!\n");
+	printf("42 was not mocked, 82 was mocked -> %d\n", foo(41));
 
 
     DO_HTONS(port, (unsigned short)protocol_port);

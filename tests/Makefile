@@ -10,8 +10,11 @@ OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
        tests/hmac_test.o tests/util_test.o tests/test_utilities.o \
 	   tests/message_test.o
 
+
 main: main.c hmac_test.o util_test.o test_utilities.o message_test.o
-	cd $(ROOT_DIR) && $(CC) $(CFLAGS) -o tests/main tests/main.c $(OBJS)
+	cd $(ROOT_DIR) && $(CC) $(CFLAGS) -o tests/main tests/main.c $(OBJS) -L./tests/Mimick/ -lmimick
+
+# TODO: build mimick
 
 message_test.o: message_test.c message_test.h
 	cd $(ROOT_DIR) && $(MAKE) CFLAGS+=-DTESTING LDLIBS='' o_files && $(CC) $(CFLAGS) -c -o tests/message_test.o tests/message_test.c

@@ -33,6 +33,7 @@ compute_hmac(const unsigned char *src, const unsigned char *dst,
              unsigned char *hmac_return);
 int add_hmac(struct buffered *buf, struct interface *ifp,
              unsigned char *packet_header);
+int foo(int x);
 int compute_hmac(const unsigned char*, const unsigned char*,
                     const unsigned char*, const unsigned char*,
                                 int, struct key*, unsigned char*);

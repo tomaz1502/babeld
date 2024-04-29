@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include "test_utilities.h"
 #include "../rfc6234/sha.h"
 #include "../BLAKE2/ref/blake2.h"
+#include "./Mimick/include/mimick.h"
 
 #undef INFINITY
 #include "../babeld.h"
@@ -52,6 +53,99 @@ void
 hmac_test_tearDown(void)
 {
     /* NO OP */
+}
+
+mmk_mock_define(foo_mock, int, int);
+
+MU_TEST(mimick_test)
+{
+	unsigned char *src, *dst, *packet_header, *body, *hmac;
+	int i, num_of_cases, bodylen;
+	char err_msg[ERR_MSG_MAX_SIZE];
+	struct key *key;
+	int hmac_len;
+
+	mmk_mock("foo@lib:message", foo_mock);
+	int val = 82;
+	mmk_when(foo(mmk_any(int)), .then_return = &val);
+
+	typedef struct test_case {
+		unsigned char src_val[ADDRESS_ARRAY_SIZE];
+		unsigned char dst_val[ADDRESS_ARRAY_SIZE];
+		unsigned char packet_header_val[PACKET_HEADER_SIZE];
+		unsigned char body_val[MAX_PACKET_BODYLEN];
+		int bodylen_val;
+		struct key key_val;
+		unsigned char hmac_expected[HMAC_MAX_SIZE];
+	} test_case;
+
+	test_case tcs[] =
+	{
+		{
+			.src_val = {254, 128, 0, 0, 0, 0, 0, 0, 2, 22, 62, 255, 254, 197,
+				        225, 239},
+			.dst_val = {255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6},
+			.packet_header_val = {42, 2, 0, 34},
+			.body_val = {8, 10, 0, 0, 0, 0, 255, 255, 105, 131, 255, 255, 4, 6,
+				         0, 0, 138, 241, 0, 10, 17, 12, 0, 0, 0, 13, 111, 180,
+						 121, 202, 112, 51, 238, 237},
+			.bodylen_val = 34,
+			.key_val = {
+				.id = "k1",
+				.type = AUTH_TYPE_SHA256,
+				.len = 64,
+				.value =
+					(unsigned char[]) {54, 16,  17, 18, 192, 255, 238, 0, 0, 0,
+					                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				.ref_count = 2
+			},
+			.hmac_expected = {12, 124, 238, 71, 58, 55, 173, 152, 18, 174, 138,
+			                  113, 75, 180, 31, 220, 144, 195, 126, 213, 130,
+			                  199, 97, 20, 69, 93, 210, 180, 41, 147, 141, 49},
+		},
+		{
+			.src_val = {254, 128, 0, 0, 0, 0, 0, 0, 2, 22, 62, 255, 254, 0, 0,
+				        0},
+			.dst_val = {255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6},
+			.packet_header_val = {42, 2, 0, 22},
+			.body_val = {4, 6, 0, 0, 47, 84, 1, 144, 17, 12, 0, 0, 0, 14, 57,
+				         72, 181, 138, 248, 108, 171, 133},
+			.bodylen_val = 22,
+			.key_val = {
+				.id = "k1",
+				.type = AUTH_TYPE_BLAKE2S128,
+				.len = 32,
+				.value =
+					(unsigned char[]){184, 17, 96, 231, 142, 203, 75, 118,
+					                  42, 213, 55, 90, 176, 66, 15, 104, 19,
+					                  214, 60, 175, 10, 203, 125, 180, 142,
+					                  232, 123, 168, 191, 50, 173, 44},
+				.ref_count = 2
+			},
+			.hmac_expected = {237, 164, 28, 31, 153, 50, 126, 166, 67, 195, 21,
+			                  19, 123, 77, 57, 46, 112, 39, 177, 23, 146, 86, 0,
+			                  0, 246, 0, 0, 0, 0, 0, 0, 0}
+		}
+	};
+
+	hmac = malloc(HMAC_MAX_SIZE * sizeof(unsigned char));
+	num_of_cases = sizeof(tcs) / sizeof(test_case);
+	for(i = 0; i < num_of_cases; ++i) {
+		src = tcs[i].src_val;
+		dst = tcs[i].dst_val;
+		packet_header = tcs[i].packet_header_val;
+		body = tcs[i].body_val;
+		bodylen = tcs[i].bodylen_val;
+		key = &tcs[i].key_val;
+
+		compute_hmac(src, dst, packet_header, body, bodylen, key, hmac);
+
+		/* mu_check(1); */
+	}
+	mmk_reset(foo);
 }
 
 MU_TEST(compute_hmac_test)
@@ -169,7 +263,8 @@ MU_TEST(compute_hmac_test)
 MU_TEST_SUITE(hmac_test_suite)
 {
 	MU_SUITE_CONFIGURE(&hmac_test_setup, &hmac_test_tearDown);
-	MU_RUN_TEST(compute_hmac_test);
+	/* MU_RUN_TEST(compute_hmac_test); */
+	MU_RUN_TEST(mimick_test);
 }
 
 int

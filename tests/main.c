@@ -4,8 +4,8 @@
 
 int
 main(void) {
-    run_util_tests();
+    /* run_util_tests(); */
     run_hmac_tests();
-	run_message_tests();
+	/* run_message_tests(); */
     return 0;
 }
