@@ -22,36 +22,25 @@ THE SOFTWARE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // memcmp on MacOS
+#include <unistd.h> // STDOUT_FILENO on MacOS
 #include <time.h>
 #include <arpa/inet.h>
 
-#include "minunit.h"
 #include "test_utilities.h"
-#undef INFINITY
 #include "../babeld.h"
 #include "../util.h"
+#include "../kernel.h"
 
 #define N_RANDOM_TESTS 128
 #define SEED 42
 #define EUI_SIZE 8
 
-void
-util_test_setup(void)
-{
-    srand(SEED);
-}
-
-void
-util_test_tear_down(void)
-{
-    /* NO OP */
-}
-
-MU_TEST(roughly_test)
+void roughly_test(void)
 {
     int i, input, output, lower_bound, upper_bound;
-    char err_lower_bound[ERR_MSG_MAX_SIZE];
-    char err_upper_bound[ERR_MSG_MAX_SIZE];
+
+    srand(SEED);
 
     for (i = 0; i < N_RANDOM_TESTS; i++) {
         input = rand() % 1024;
@@ -67,25 +56,29 @@ MU_TEST(roughly_test)
             swap(&lower_bound, &upper_bound);
         }
 
-        sprintf(err_lower_bound,
-            "Output of roughly function was too low. Input: %d / Output: %d.", input, output);
-        mu_assert(output >= lower_bound, err_lower_bound);
+        if(!babel_check(output >= lower_bound)) {
+            printf("Output of roughly function was too low. Input: %d / Output: %d.\n", input, output);
+        }
 
-        sprintf(err_upper_bound,
-            "Output of roughly function was too high. Input: %d / Output: %d.", input, output);
-        mu_assert(output <= upper_bound, err_upper_bound);
+        if(!babel_check(output <= upper_bound)) {
+            printf("Output of roughly function was too high. Input: %d / Output: %d.\n", input, output);
+        }
     }
 
-    mu_assert(roughly(1) == 1, "roughly(1) should be 1.");
-    mu_assert(roughly(0) == 0, "roughly(0) should be 0.");
+    if(!babel_check(roughly(1) == 1)) {
+        printf("roughly(1) should be 1.\n");
+    }
+    if(!babel_check(roughly(0) == 0)) {
+        printf("roughly(1) should be 0.\n");
+    }
 }
 
 // NOTE: timeval_minus seems to assume that s1 >= s2.
-MU_TEST(timeval_minus_test)
+void timeval_minus_test(void)
 {
     struct timeval *tv1, *tv2, result;
     int i, num_of_cases;
-    char err_msg[ERR_MSG_MAX_SIZE];
+    int test_ok;
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -108,29 +101,29 @@ MU_TEST(timeval_minus_test)
 
         timeval_minus(&result, tv1, tv2);
 
-        sprintf(
-            err_msg,
-            "timeval_minus(%ld.%06ld, %ld.%06ld) = %ld.%06ld, expected: %ld.%06ld.",
-            tv1->tv_sec,
-            tv1->tv_usec,
-            tv2->tv_sec,
-            tv2->tv_usec,
-            result.tv_sec,
-            result.tv_usec,
-            tcs[i].expected.tv_sec,
-            tcs[i].expected.tv_usec
-        );
-        mu_assert(result.tv_usec == tcs[i].expected.tv_usec, err_msg);
-        mu_assert(result.tv_sec == tcs[i].expected.tv_sec, err_msg);
+        test_ok = result.tv_usec == tcs[i].expected.tv_usec ||
+                  result.tv_sec == tcs[i].expected.tv_sec;
+        if(!babel_check(test_ok)) {
+            printf(
+                "timeval_minus(%ld.%06ld, %ld.%06ld) = %ld.%06ld, expected: %ld.%06ld.",
+                tv1->tv_sec,
+                tv1->tv_usec,
+                tv2->tv_sec,
+                tv2->tv_usec,
+                result.tv_sec,
+                result.tv_usec,
+                tcs[i].expected.tv_sec,
+                tcs[i].expected.tv_usec
+            );
+        }
     }
 }
 
-MU_TEST(timeval_minus_msec_test)
+void timeval_minus_msec_test(void)
 {
     struct timeval *tv1, *tv2;
     int i, num_of_cases;
     unsigned result;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -155,25 +148,24 @@ MU_TEST(timeval_minus_msec_test)
 
         result = timeval_minus_msec(tv1, tv2);
 
-        sprintf(
-            err_msg,
-            "timeval_minus_msec(%ld.%06ld, %ld.%06ld) = %u, expected: %u.",
-            tv1->tv_sec,
-            tv1->tv_usec,
-            tv2->tv_sec,
-            tv2->tv_usec,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "timeval_minus_msec(%ld.%06ld, %ld.%06ld) = %u, expected: %u.",
+                tv1->tv_sec,
+                tv1->tv_usec,
+                tv2->tv_sec,
+                tv2->tv_usec,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(timeval_add_msec_test)
+void timeval_add_msec_test(void)
 {
     struct timeval *tv, result;
     int msecs, num_of_cases, i, test_ok;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -196,28 +188,27 @@ MU_TEST(timeval_add_msec_test)
 
         timeval_add_msec(&result, tv, msecs);
 
-        sprintf(
-            err_msg,
-            "timeval_add_msec(%ld.%06ld, %d) = %ld.%06ld, expected: %ld.%06ld.",
-            tv->tv_sec,
-            tv->tv_usec,
-            msecs,
-            result.tv_sec,
-            result.tv_usec,
-            tcs[i].expected.tv_sec,
-            tcs[i].expected.tv_usec
-        );
         test_ok = (result.tv_sec == tcs[i].expected.tv_sec);
         test_ok &= (result.tv_usec == tcs[i].expected.tv_usec);
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "timeval_add_msec(%ld.%06ld, %d) = %ld.%06ld, expected: %ld.%06ld.",
+                tv->tv_sec,
+                tv->tv_usec,
+                msecs,
+                result.tv_sec,
+                result.tv_usec,
+                tcs[i].expected.tv_sec,
+                tcs[i].expected.tv_usec
+            );
+        }
     }
 }
 
-MU_TEST(timeval_compare_test)
+void timeval_compare_test(void)
 {
     struct timeval *tv1, *tv2;
     int result, i, num_of_cases;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         struct timeval tv1_val;
@@ -243,25 +234,24 @@ MU_TEST(timeval_compare_test)
 
         result = timeval_compare(tv1, tv2);
 
-        sprintf(
-            err_msg,
-            "timeval_compare(%ld.%06ld, %ld.%06ld) = %d, expected: %d.",
-            tv1->tv_sec,
-            tv1->tv_usec,
-            tv2->tv_sec,
-            tv2->tv_usec,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "timeval_compare(%ld.%06ld, %ld.%06ld) = %d, expected: %d.",
+                tv1->tv_sec,
+                tv1->tv_usec,
+                tv2->tv_sec,
+                tv2->tv_usec,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(timeval_min_test)
+void timeval_min_test(void)
 {
     struct timeval s1, s2;
     int i, num_of_cases, test_ok;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         struct timeval s1_val;
@@ -286,31 +276,30 @@ MU_TEST(timeval_min_test)
 
         timeval_min(&s1, &s2);
 
-        sprintf(
-            err_msg,
-            "timeval_min(%ld.%06ld, %ld.%06ld) = %ld.%06ld, expected: %ld.%06ld.",
-            tcs[i].s1_val.tv_sec,
-            tcs[i].s1_val.tv_usec,
-            tcs[i].s2_val.tv_sec,
-            tcs[i].s2_val.tv_usec,
-            s1.tv_sec,
-            s1.tv_usec,
-            tcs[i].expected.tv_sec,
-            tcs[i].expected.tv_usec
-        );
 
         test_ok = (s1.tv_sec == tcs[i].expected.tv_sec);
         test_ok &= (s1.tv_usec == tcs[i].expected.tv_usec);
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "timeval_min(%ld.%06ld, %ld.%06ld) = %ld.%06ld, expected: %ld.%06ld.",
+                tcs[i].s1_val.tv_sec,
+                tcs[i].s1_val.tv_usec,
+                tcs[i].s2_val.tv_sec,
+                tcs[i].s2_val.tv_usec,
+                s1.tv_sec,
+                s1.tv_usec,
+                tcs[i].expected.tv_sec,
+                tcs[i].expected.tv_usec
+            );
+        }
     }
 }
 
-MU_TEST(timeval_min_sec_test)
+void timeval_min_sec_test(void)
 {
     struct timeval s;
     time_t secs;
     int i, num_of_cases;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         struct timeval s_val;
@@ -334,25 +323,24 @@ MU_TEST(timeval_min_sec_test)
 
         timeval_min_sec(&s, secs);
 
-        sprintf(
-            err_msg,
-            "timeval_min_sec(%ld.%06ld, %ld) = %ld._, expected: %ld._.",
-            tcs[i].s_val.tv_sec,
-            tcs[i].s_val.tv_usec,
-            secs,
-            s.tv_sec,
-            tcs[i].s_secs_expected
-        );
 
-        mu_assert(s.tv_sec == tcs[i].s_secs_expected, err_msg);
+        if(!babel_check(s.tv_sec == tcs[i].s_secs_expected)) {
+            printf(
+                "timeval_min_sec(%ld.%06ld, %ld) = %ld._, expected: %ld._.",
+                tcs[i].s_val.tv_sec,
+                tcs[i].s_val.tv_usec,
+                secs,
+                s.tv_sec,
+                tcs[i].s_secs_expected
+            );
+        }
     }
 }
 
-MU_TEST(parse_nat_test)
+void parse_nat_test(void)
 {
     const char *string;
     int result, i, num_of_cases;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         const char *string_val;
@@ -373,22 +361,21 @@ MU_TEST(parse_nat_test)
 
         result = parse_nat(string);
 
-        sprintf(
-            err_msg,
-            "parse_nat(%s) = %d, expected: %d",
-            string,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "parse_nat(%s) = %d, expected: %d",
+                string,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(parse_thousands_test)
+void parse_thousands_test(void)
 {
     const char *string;
     int result, i, num_of_cases;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         const char * const string_val;
@@ -409,21 +396,21 @@ MU_TEST(parse_thousands_test)
 
         result = parse_thousands(string);
 
-        sprintf(
-            err_msg,
-            "parse_thousands(%s) = %d, expected: %d.",
-            string,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "parse_thousands(%s) = %d, expected: %d.",
+                string,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(h2i_test)
+void h2i_test(void)
 {
     int result, i, num_of_cases;
-    char c, err_msg[ERR_MSG_MAX_SIZE];
+    char c;
 
     typedef struct test_case {
         char c_val;
@@ -446,23 +433,22 @@ MU_TEST(h2i_test)
 
         result = h2i(c);
 
-        sprintf(
-            err_msg,
-            "h2i(%c) = %d, expected: %d",
-            c,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "h2i(%c) = %d, expected: %d",
+                c,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(fromhex_test)
+void fromhex_test(void)
 {
     unsigned char *dst;
     const char *src;
     int n, i, num_of_cases, dst_len;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         const char *src_val;
@@ -487,26 +473,25 @@ MU_TEST(fromhex_test)
 
         dst_len = fromhex(dst, src, n);
 
-        sprintf(
-            err_msg,
-            "fromhex(\"%s\", %d) = %s, expected: %s",
-            src,
-            n,
-            str_of_array(dst, dst_len),
-            str_of_array(tcs[i].expected, tcs[i].n_val / 2)
-        );
-        mu_assert(memcmp(dst, tcs[i].expected, dst_len) == 0, err_msg);
+        if(!babel_check(memcmp(dst, tcs[i].expected, dst_len) == 0)) {
+            printf(
+                "fromhex(\"%s\", %d) = %s, expected: %s",
+                src,
+                n,
+                str_of_array(dst, dst_len),
+                str_of_array(tcs[i].expected, tcs[i].n_val / 2)
+            );
+        }
     }
 }
 
 // NOTE: Skipping do_debugf
 
-MU_TEST(in_prefix_test)
+void in_prefix_test(void)
 {
     const unsigned char *restrict prefix, *restrict address;
     unsigned char plen;
     int num_of_cases, i, result;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         const unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
@@ -533,26 +518,25 @@ MU_TEST(in_prefix_test)
 
         result = in_prefix(prefix, address, plen);
 
-        sprintf(
-            err_msg,
-            "in_prefix(%s, %s, %u) = %d, expected: %d.",
-            str_of_array(address, tcs[i].address_val_length),
-            str_of_array(prefix, tcs[i].prefix_val_length),
-            plen,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(result == tcs[i].expected, err_msg);
+        if(!babel_check(result == tcs[i].expected)) {
+            printf(
+                "in_prefix(%s, %s, %u) = %d, expected: %d.",
+                str_of_array(address, tcs[i].address_val_length),
+                str_of_array(prefix, tcs[i].prefix_val_length),
+                plen,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(normalize_prefix_test)
+void normalize_prefix_test(void)
 {
     const unsigned char *restrict prefix;
     unsigned char *restrict result;
     unsigned char plen, mask;
     int num_of_cases, i, j, test_ok, bit_ok;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned char expected[ADDRESS_ARRAY_SIZE];
@@ -578,15 +562,6 @@ MU_TEST(normalize_prefix_test)
 
         normalize_prefix(result, prefix, plen);
 
-        sprintf(
-            err_msg,
-            "normalize_prefix(%s, %u) = %s, expected: %s.",
-            str_of_array(prefix, tcs[i].prefix_size),
-            plen,
-            str_of_array(result, tcs[i].prefix_size),
-            str_of_array(tcs[i].expected, tcs[i].prefix_size)
-        );
-
         test_ok = memcmp(result, tcs[i].expected, plen / 8) == 0;
         for(j = 0; j < plen % 8; j++) {
             mask = 1 << (8 - j - 1);
@@ -594,16 +569,23 @@ MU_TEST(normalize_prefix_test)
                      (tcs[i].expected[plen / 8] & mask);
             test_ok &= bit_ok;
         }
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "normalize_prefix(%s, %u) = %s, expected: %s.",
+                str_of_array(prefix, tcs[i].prefix_size),
+                plen,
+                str_of_array(result, tcs[i].prefix_size),
+                str_of_array(tcs[i].expected, tcs[i].prefix_size)
+            );
+        }
     }
 }
 
-MU_TEST(format_address_test)
+void format_address_test(void)
 {
     const unsigned char *address;
     const char *result;
     int num_of_cases, i;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned char address_val[ADDRESS_ARRAY_SIZE];
@@ -636,24 +618,23 @@ MU_TEST(format_address_test)
 
         result = format_address(address);
 
-        sprintf(
-            err_msg,
-            "format_address(%s) = %s, expected %s",
-            str_of_array(address, tcs[i].address_length),
-            result,
-            tcs[i].expected
-        );
-        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
+        if(!babel_check(strcmp(result, tcs[i].expected) == 0)) {
+            printf(
+                "format_address(%s) = %s, expected %s",
+                str_of_array(address, tcs[i].address_length),
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
 // NOTE: The only purpose of this function is to append "/`plen`" in the result of format_address?
-MU_TEST(format_prefix_test)
+void format_prefix_test(void)
 {
     unsigned char plen, *prefix;
     const char *result;
     int num_of_cases, i;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
@@ -677,33 +658,32 @@ MU_TEST(format_prefix_test)
         },
 
     };
-    
+
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; ++i) {
         plen = tcs[i].plen_val;
         prefix = tcs[i].prefix_val;
-        
+
         result = format_prefix(prefix, plen);
 
-        sprintf(
-            err_msg,
-            "format_prefix(%s, %u) = %s, expected: %s.",
-            str_of_array(prefix, 3),
-            plen,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
+        if(!babel_check(strcmp(result, tcs[i].expected) == 0)) {
+            printf(
+                "format_prefix(%s, %u) = %s, expected: %s.",
+                str_of_array(prefix, 3),
+                plen,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(format_eui64_test)
+void format_eui64_test(void)
 {
     unsigned char *eui;
     const char *result;
     int num_of_cases, i;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned char eui_val[EUI_SIZE];
@@ -722,31 +702,30 @@ MU_TEST(format_eui64_test)
           "aa:aa:bb:bb:cc:cc:dd:dd",
         },
     };
-    
+
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; ++i) {
         eui = tcs[i].eui_val;
-        
+
         result = format_eui64(eui);
 
-        sprintf(
-            err_msg,
-            "format_eui64(%s) = %s, expected: %s.",
-            str_of_array(eui, tcs[i].eui_val_length),
-            result,
-            tcs[i].expected
-        );
-        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
+        if(!babel_check(strcmp(result, tcs[i].expected) == 0)) {
+            printf(
+                "format_eui64(%s) = %s, expected: %s.",
+                str_of_array(eui, tcs[i].eui_val_length),
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(format_thousands_test)
+void format_thousands_test(void)
 {
     unsigned int value;
     const char *result;
     int num_of_cases, i;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned int value_val;
@@ -759,32 +738,31 @@ MU_TEST(format_thousands_test)
         { 512, "0.512" },
         { 1234567, "1234.567" }
     };
-    
+
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; ++i) {
         value = tcs[i].value_val;
-        
+
         result = format_thousands(value);
 
-        sprintf(
-            err_msg,
-            "format_thousands(%d) = %s, expected: %s.",
-            value,
-            result,
-            tcs[i].expected
-        );
-        mu_assert(strcmp(result, tcs[i].expected) == 0, err_msg);
+        if(!babel_check(strcmp(result, tcs[i].expected) == 0)) {
+            printf(
+                "format_thousands(%d) = %s, expected: %s.",
+                value,
+                result,
+                tcs[i].expected
+            );
+        }
     }
 }
 
-MU_TEST(parse_address_test)
+void parse_address_test(void)
 {
     char *address;
     unsigned char *addr_r;
     int *af_r;
     int rc, num_of_cases, i, test_ok;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         char *const address_val;
@@ -808,35 +786,34 @@ MU_TEST(parse_address_test)
           0,
         }
     };
-    
+
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; ++i) {
         address = tcs[i].address_val;
 
         rc = parse_address(address, addr_r, af_r);
-        
+
         test_ok = memcmp(addr_r, tcs[i].expected_addr_r, 16) == 0;
         test_ok &= (tcs[i].expected_af_r == *af_r);
         test_ok &= (tcs[i].expected_rc == rc);
 
-        sprintf(
-            err_msg,
-            "parse_address(%s) = %s, expected: %s.",
-            address,
-            str_of_array(addr_r, ADDRESS_ARRAY_SIZE),
-            str_of_array(tcs[i].expected_addr_r, ADDRESS_ARRAY_SIZE)
-        );
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "parse_address(%s) = %s, expected: %s.",
+                address,
+                str_of_array(addr_r, ADDRESS_ARRAY_SIZE),
+                str_of_array(tcs[i].expected_addr_r, ADDRESS_ARRAY_SIZE)
+            );
+        }
     }
 }
 
-MU_TEST(parse_net_test)
+void parse_net_test(void)
 {
     const char *net;
     unsigned char *prefix_r, *plen_r, mask;
     int *af_r, rc, num_of_cases, i, j, test_ok;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
 // 16 + 4 for prefix annotation
 #define NET_MAX_SIZE 20
@@ -894,7 +871,7 @@ MU_TEST(parse_net_test)
         net = tcs[i].net_val;
 
         rc = parse_net(net, prefix_r, plen_r, af_r);
-    
+
         test_ok = (*plen_r == tcs[i].expected_plen_r);
         test_ok &= (*af_r == tcs[i].expected_af_r);
         test_ok &= (rc == tcs[i].expected_rc);
@@ -905,23 +882,22 @@ MU_TEST(parse_net_test)
                         (prefix_r[tcs[i].expected_plen_r / 8] & mask));
         }
 
-        sprintf(
-            err_msg,
-            "parse_net(%s) = %s, expected: %s.",
-            net,
-            str_of_array(prefix_r, ADDRESS_ARRAY_SIZE),
-            str_of_array(tcs[i].expected_prefix_r, ADDRESS_ARRAY_SIZE)
-        );
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "parse_net(%s) = %s, expected: %s.",
+                net,
+                str_of_array(prefix_r, ADDRESS_ARRAY_SIZE),
+                str_of_array(tcs[i].expected_prefix_r, ADDRESS_ARRAY_SIZE)
+            );
+        }
     }
 }
 
-MU_TEST(parse_eui64_test)
+void parse_eui64_test(void)
 {
     const char *eui;
     unsigned char eui_r[EUI_SIZE];
     int i, num_of_cases, test_ok, rc;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         char *eui_val;
@@ -951,33 +927,34 @@ MU_TEST(parse_eui64_test)
         eui = tcs[i].eui_val;
 
         rc = parse_eui64(eui, eui_r);
-        
+
         test_ok = (rc == tcs[i].expected_rc);
         test_ok &= (memcmp(eui_r, tcs[i].expected_eui_r, EUI_SIZE) == 0);
 
-        sprintf(
-            err_msg,
-            "parse_eui64(%s) = %s, expected: %s.",
-            eui,
-            str_of_array(eui_r, EUI_SIZE),
-            str_of_array(tcs[i].expected_eui_r, EUI_SIZE)
-        );
-        mu_assert(test_ok, err_msg);
+        if(!babel_check(test_ok)) {
+            printf(
+                "parse_eui64(%s) = %s, expected: %s.",
+                eui,
+                str_of_array(eui_r, EUI_SIZE),
+                str_of_array(tcs[i].expected_eui_r, EUI_SIZE)
+            );
+        }
     }
 }
 
-MU_TEST(wait_for_fd_test)
+void wait_for_fd_test(void)
 {
     int rc;
     rc = wait_for_fd(1, STDOUT_FILENO, 100);
-    mu_assert(rc == 1, "STDOUT should be able to write\n");
+    if(!babel_check(rc == 1)) {
+        printf("STDOUT should be able to write.\n");
+    }
 }
 
-MU_TEST(martian_prefix_test)
+void martian_prefix_test(void)
 {
     unsigned char *prefix;
     int i, num_of_cases, plen, rc;
-    char err_msg[ERR_MSG_MAX_SIZE];
 
     typedef struct test_case {
         unsigned char prefix_val[ADDRESS_ARRAY_SIZE];
@@ -1020,51 +997,49 @@ MU_TEST(martian_prefix_test)
 
         rc = martian_prefix(prefix, plen);
 
-        sprintf(
-            err_msg,
-            "martian_prefix(%s, %d) = %d, expected: %d.",
-            str_of_array(prefix, ADDRESS_ARRAY_SIZE),
-            plen,
-            rc,
-            tcs[i].expected_rc
-        );
-        mu_assert(rc == tcs[i].expected_rc, err_msg);
+        if(!babel_check(rc == tcs[i].expected_rc)) {
+            printf(
+                "martian_prefix(%s, %d) = %d, expected: %d.",
+                str_of_array(prefix, ADDRESS_ARRAY_SIZE),
+                plen,
+                rc,
+                tcs[i].expected_rc
+            );
+        }
     }
 }
 
-MU_TEST_SUITE(util_test_suite)
-{
-    MU_SUITE_CONFIGURE(&util_test_setup, &util_test_tear_down);
-    MU_RUN_TEST(roughly_test);
-    MU_RUN_TEST(timeval_minus_test);
-    MU_RUN_TEST(timeval_minus_msec_test);
-    MU_RUN_TEST(timeval_add_msec_test);
-    MU_RUN_TEST(timeval_compare_test);
-    MU_RUN_TEST(timeval_min_test);
-    MU_RUN_TEST(timeval_min_sec_test);
-    MU_RUN_TEST(parse_nat_test);
-    MU_RUN_TEST(parse_thousands_test);
-    MU_RUN_TEST(h2i_test);
-    MU_RUN_TEST(fromhex_test);
-    MU_RUN_TEST(in_prefix_test);
-    MU_RUN_TEST(normalize_prefix_test);
-    MU_RUN_TEST(format_address_test);
-    MU_RUN_TEST(format_prefix_test);
-    MU_RUN_TEST(format_eui64_test);
-    MU_RUN_TEST(format_thousands_test);
-    MU_RUN_TEST(parse_address_test);
-    MU_RUN_TEST(parse_net_test);
-    MU_RUN_TEST(parse_eui64_test);
-    MU_RUN_TEST(wait_for_fd_test);
-    MU_RUN_TEST(martian_prefix_test);
-}
-
-int
-run_util_tests(void) {
-  printf("--------------------------------------------\n");
-  printf("Running tests for util.c.\n");
-  printf("--------------------------------------------\n");
-  MU_RUN_SUITE(util_test_suite);
-  MU_REPORT();
-  return MU_EXIT_CODE;
+void run_util_tests() {
+    struct timeval start, end;
+    unsigned diff_msecs;
+    printf("-----------------------------------------------------------\n");
+    printf("Running util.c tests:\n");
+    printf("-----------------------------------------------------------\n");
+    gettime(&start);
+    run_test(roughly_test, "roughly_test");
+    run_test(timeval_minus_test,"timeval_minus_test");
+    run_test(timeval_minus_msec_test,"timeval_minus_msec_test");
+    run_test(timeval_add_msec_test,"timeval_add_msec_test");
+    run_test(timeval_compare_test,"timeval_compare_test");
+    run_test(timeval_min_test,"timeval_min_test");
+    run_test(timeval_min_sec_test,"timeval_min_sec_test");
+    run_test(parse_nat_test,"parse_nat_test");
+    run_test(parse_thousands_test,"parse_thousands_test");
+    run_test(h2i_test,"h2i_test");
+    run_test(fromhex_test,"fromhex_test");
+    run_test(in_prefix_test,"in_prefix_test");
+    run_test(normalize_prefix_test,"normalize_prefix_test");
+    run_test(format_address_test,"format_address_test");
+    run_test(format_prefix_test,"format_prefix_test");
+    run_test(format_eui64_test,"format_eui64_test");
+    run_test(format_thousands_test,"format_thousands_test");
+    run_test(parse_address_test,"parse_address_test");
+    run_test(parse_net_test,"parse_net_test");
+    run_test(parse_eui64_test,"parse_eui64_test");
+    run_test(wait_for_fd_test,"wait_for_fd_test");
+    run_test(martian_prefix_test,"martian_prefix_test");
+    gettime(&end);
+    diff_msecs = timeval_minus_msec(&end, &start);
+    printf("util.c tests done.\n");
+    printf("Time taken: %u miliseconds.\n", diff_msecs);
 }

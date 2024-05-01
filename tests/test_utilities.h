@@ -20,9 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#define ERR_MSG_MAX_SIZE 1500
+#ifndef TEST_UTILITIES_H
+#define TEST_UTILITIES_H
+
 #define ADDRESS_ARRAY_SIZE 16
 #define ARR_MAX_SIZE 400
 
+int tests_run, tests_failed;
+
 void swap(int *a, int *b);
 char* str_of_array(const unsigned char* const arr, int len);
+int babel_check(int prop);
+void run_test(void (*test)(void), char* test_name);
+
+#endif

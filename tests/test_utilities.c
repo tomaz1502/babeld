@@ -21,8 +21,12 @@ THE SOFTWARE.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "test_utilities.h"
+#include "../kernel.h"
+#include "../util.h"
 
 void
 swap(int* a, int* b)
@@ -49,4 +53,22 @@ str_of_array(const unsigned char* const arr, int len) {
     str[i][pt] = '\0';
 
     return str[i];
+}
+
+int babel_check(int prop) {
+    tests_run++;
+    if(!prop) {
+        tests_failed++;
+    }
+    return prop;
+}
+
+void run_test(void (*test)(void), char* test_name) {
+    struct timeval start, end;
+    unsigned diff_msecs;
+    gettime(&start);
+    test();
+    gettime(&end);
+    diff_msecs = timeval_minus_msec(&end, &start);
+    printf("%s took %u miliseconds.\n", test_name, diff_msecs);
 }
