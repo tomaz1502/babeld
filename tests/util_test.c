@@ -1010,12 +1010,12 @@ void martian_prefix_test(void)
 }
 
 void run_util_tests() {
-    struct timeval start, end;
-    unsigned diff_msecs;
+    struct timespec start, end;
+    double diff_secs;
     printf("-----------------------------------------------------------\n");
     printf("Running util.c tests:\n");
     printf("-----------------------------------------------------------\n");
-    gettime(&start);
+    clock_gettime(CLOCK_MONOTONIC, &start);
     run_test(roughly_test, "roughly_test");
     run_test(timeval_minus_test,"timeval_minus_test");
     run_test(timeval_minus_msec_test,"timeval_minus_msec_test");
@@ -1038,8 +1038,9 @@ void run_util_tests() {
     run_test(parse_eui64_test,"parse_eui64_test");
     run_test(wait_for_fd_test,"wait_for_fd_test");
     run_test(martian_prefix_test,"martian_prefix_test");
-    gettime(&end);
-    diff_msecs = timeval_minus_msec(&end, &start);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    diff_secs = end.tv_sec - start.tv_sec;
+    diff_secs += (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("util.c tests done.\n");
-    printf("Time taken: %u miliseconds.\n", diff_msecs);
+    printf("Time taken: %.8f seconds.\n", diff_secs);
 }

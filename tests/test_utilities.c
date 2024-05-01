@@ -64,11 +64,12 @@ int babel_check(int prop) {
 }
 
 void run_test(void (*test)(void), char* test_name) {
-    struct timeval start, end;
-    unsigned diff_msecs;
-    gettime(&start);
+    struct timespec start, end;
+    double diff_secs;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     test();
-    gettime(&end);
-    diff_msecs = timeval_minus_msec(&end, &start);
-    printf("%s took %u miliseconds.\n", test_name, diff_msecs);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    diff_secs = end.tv_sec - start.tv_sec;
+    diff_secs += (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("%s took %.8f seconds.\n", test_name, diff_secs);
 }
