@@ -73,7 +73,7 @@ void add_key_test(void)
         },
         {
             .id_val = "k2",
-            .type_val = AUTH_TYPE_NONE,
+            .type_val = AUTH_TYPE_BLAKE2S128,
             .len_val = 32,
             .value_val =
                 (unsigned char[])
@@ -113,6 +113,7 @@ void add_key_test(void)
                 len,
                 str_of_array(value, len)
             );
+            fflush(stderr);
         }
     }
 }
@@ -146,7 +147,6 @@ void compute_hmac_test(void)
                 121, 202, 112, 51, 238, 237},
             .bodylen_val = 34,
             .key_val = {
-                .id = "k1",
                 .type = AUTH_TYPE_SHA256,
                 .len = 64,
                 .value =
@@ -156,7 +156,6 @@ void compute_hmac_test(void)
                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                .ref_count = 2
             },
             .hmac_expected = {12, 124, 238, 71, 58, 55, 173, 152, 18, 174, 138,
                 113, 75, 180, 31, 220, 144, 195, 126, 213, 130,
@@ -172,7 +171,6 @@ void compute_hmac_test(void)
                  72, 181, 138, 248, 108, 171, 133},
             .bodylen_val = 22,
             .key_val = {
-                .id = "k2",
                 .type = AUTH_TYPE_BLAKE2S128,
                 .len = 32,
                 .value =
@@ -181,7 +179,6 @@ void compute_hmac_test(void)
                          42, 213, 55, 90, 176, 66, 15, 104, 19,
                          214, 60, 175, 10, 203, 125, 180, 142,
                          232, 123, 168, 191, 50, 173, 44},
-                .ref_count = 2
             },
             .hmac_expected =
                 {237, 164, 28, 31, 153, 50, 126, 166, 67, 195, 21,
@@ -213,7 +210,34 @@ void compute_hmac_test(void)
             fprintf(stderr, "key value: %s\n", str_of_array(key->value, key->len));
             fprintf(stderr, "hmac computed: %s\n", str_of_array(hmac, hmac_len));
             fprintf(stderr, "hmac expected: %s\n", str_of_array(tcs[i].hmac_expected, hmac_len));
+            fflush(stderr);
         }
+    }
+}
+
+void check_hmac_test(void)
+{
+    int i, num_of_cases;
+
+    typedef struct test_case {
+        const unsigned char *packet_val;
+        int packetlen_val;
+        int bodylen_val;
+        const unsigned char *src_val;
+        const unsigned char *dst_val;
+        struct interface ifp_val;
+        int rc_expected;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        {
+
+        }
+    };
+
+    for(i = 0; i < num_of_cases; ++i) {
+
     }
 }
 
