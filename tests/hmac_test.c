@@ -57,7 +57,32 @@ void add_key_test(void)
         unsigned char *value_val;
     } test_case;
 
-    test_case tcs[] = {};
+    test_case tcs[] =
+    {
+        {
+            .id_val = "k1",
+            .type_val = AUTH_TYPE_SHA256,
+            .len_val = 64,
+            .value_val =
+                (unsigned char[])
+                    {54, 16,  17, 18, 192, 255, 238, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        },
+        {
+            .id_val = "k2",
+            .type_val = AUTH_TYPE_NONE,
+            .len_val = 32,
+            .value_val =
+                (unsigned char[])
+                    {184, 17, 96, 231, 142, 203, 75, 118,
+                     42, 213, 55, 90, 176, 66, 15, 104, 19,
+                     214, 60, 175, 10, 203, 125, 180, 142,
+                     232, 123, 168, 191, 50, 173, 44},
+        },
+    };
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
     for(i = 0; i < num_of_cases; ++i) {
@@ -71,9 +96,23 @@ void add_key_test(void)
         test_ok = strcmp(id, key->id) == 0;
         test_ok &= type == key->type;
         test_ok &= len == key->len;
-        test_ok &= memcmp(0,0,0) == 0;
+        test_ok &= memcmp(value, tcs[i].value_val, len) == 0;
         if(!babel_check(test_ok)) {
-            fprintf(stderr, "");
+            fprintf(stderr,
+                "add_key(%s, %d, %d, %s) =\n{ %s, %d, %d, %s }\nexpected: { %s, %d, %d, %s }.\n",
+                id,
+                type,
+                len,
+                str_of_array(value, len),
+                key->id,
+                key->type,
+                key->len,
+                str_of_array(key->value, key->len),
+                id,
+                type,
+                len,
+                str_of_array(value, len)
+            );
         }
     }
 }
@@ -111,11 +150,12 @@ void compute_hmac_test(void)
                 .type = AUTH_TYPE_SHA256,
                 .len = 64,
                 .value =
-                    (unsigned char[]) {54, 16,  17, 18, 192, 255, 238, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                    (unsigned char[])
+                        {54, 16,  17, 18, 192, 255, 238, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 .ref_count = 2
             },
             .hmac_expected = {12, 124, 238, 71, 58, 55, 173, 152, 18, 174, 138,
@@ -127,23 +167,26 @@ void compute_hmac_test(void)
                 0},
             .dst_val = {255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6},
             .packet_header_val = {42, 2, 0, 22},
-            .body_val = {4, 6, 0, 0, 47, 84, 1, 144, 17, 12, 0, 0, 0, 14, 57,
-                72, 181, 138, 248, 108, 171, 133},
+            .body_val =
+                {4, 6, 0, 0, 47, 84, 1, 144, 17, 12, 0, 0, 0, 14, 57,
+                 72, 181, 138, 248, 108, 171, 133},
             .bodylen_val = 22,
             .key_val = {
-                .id = "k1",
+                .id = "k2",
                 .type = AUTH_TYPE_BLAKE2S128,
                 .len = 32,
                 .value =
-                    (unsigned char[]){184, 17, 96, 231, 142, 203, 75, 118,
-                        42, 213, 55, 90, 176, 66, 15, 104, 19,
-                        214, 60, 175, 10, 203, 125, 180, 142,
-                        232, 123, 168, 191, 50, 173, 44},
+                    (unsigned char[])
+                        {184, 17, 96, 231, 142, 203, 75, 118,
+                         42, 213, 55, 90, 176, 66, 15, 104, 19,
+                         214, 60, 175, 10, 203, 125, 180, 142,
+                         232, 123, 168, 191, 50, 173, 44},
                 .ref_count = 2
             },
-            .hmac_expected = {237, 164, 28, 31, 153, 50, 126, 166, 67, 195, 21,
-                19, 123, 77, 57, 46, 112, 39, 177, 23, 146, 86, 0,
-                0, 246, 0, 0, 0, 0, 0, 0, 0}
+            .hmac_expected =
+                {237, 164, 28, 31, 153, 50, 126, 166, 67, 195, 21,
+                 19, 123, 77, 57, 46, 112, 39, 177, 23, 146, 86, 0,
+                 0, 246, 0, 0, 0, 0, 0, 0, 0}
         }
     };
 
@@ -161,6 +204,7 @@ void compute_hmac_test(void)
 
         hmac_len = tcs[i].key_val.type == AUTH_TYPE_SHA256 ? 32 : 16;
         if(!babel_check(memcmp(hmac, tcs[i].hmac_expected, hmac_len) == 0)) {
+            fprintf(stderr, "Failed test on compute_hmac:\n");
             fprintf(stderr, "src: %s\n", str_of_array(src, ADDRESS_ARRAY_SIZE));
             fprintf(stderr, "dst: %s\n", str_of_array(dst, ADDRESS_ARRAY_SIZE));
             fprintf(stderr, "packet_header: %s\n", str_of_array(packet_header, PACKET_HEADER_SIZE));
@@ -181,5 +225,6 @@ void setup(void)
 void hmac_test_suite(void)
 {
     setup();
+    run_test(add_key_test, "add_key_test");
     run_test(compute_hmac_test, "compute_hmac_test");
 }
