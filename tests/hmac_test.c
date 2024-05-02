@@ -43,6 +43,41 @@
 #define HMAC_MAX_SIZE 32
 #define KEY_MAX_SIZE 64
 
+void add_key_test(void)
+{
+    int i, num_of_cases, type, len, test_ok;
+    char *id;
+    unsigned char *value;
+    struct key *key;
+
+    typedef struct test_case {
+        char *id_val;
+        int type_val;
+        int len_val;
+        unsigned char *value_val;
+    } test_case;
+
+    test_case tcs[] = {};
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        id = tcs[i].id_val;
+        type = tcs[i].type_val;
+        len = tcs[i].len_val;
+        value = tcs[i].value_val;
+
+        key = add_key(id, type, len, value);
+
+        test_ok = strcmp(id, key->id) == 0;
+        test_ok &= type == key->type;
+        test_ok &= len == key->len;
+        test_ok &= memcmp(0,0,0) == 0;
+        if(!babel_check(test_ok)) {
+            fprintf(stderr, "");
+        }
+    }
+}
+
 void compute_hmac_test(void)
 {
     unsigned char *src, *dst, *packet_header, *body, *hmac;
@@ -126,14 +161,14 @@ void compute_hmac_test(void)
 
         hmac_len = tcs[i].key_val.type == AUTH_TYPE_SHA256 ? 32 : 16;
         if(!babel_check(memcmp(hmac, tcs[i].hmac_expected, hmac_len) == 0)) {
-            printf("src: %s\n", str_of_array(src, ADDRESS_ARRAY_SIZE));
-            printf("dst: %s\n", str_of_array(dst, ADDRESS_ARRAY_SIZE));
-            printf("packet_header: %s\n", str_of_array(packet_header, PACKET_HEADER_SIZE));
-            printf("body: %s\n", str_of_array(body, bodylen));
-            printf("bodylen: %d\n", bodylen);
-            printf("key value: %s\n", str_of_array(key->value, key->len));
-            printf("hmac computed: %s\n", str_of_array(hmac, hmac_len));
-            printf("hmac expected: %s\n", str_of_array(tcs[i].hmac_expected, hmac_len));
+            fprintf(stderr, "src: %s\n", str_of_array(src, ADDRESS_ARRAY_SIZE));
+            fprintf(stderr, "dst: %s\n", str_of_array(dst, ADDRESS_ARRAY_SIZE));
+            fprintf(stderr, "packet_header: %s\n", str_of_array(packet_header, PACKET_HEADER_SIZE));
+            fprintf(stderr, "body: %s\n", str_of_array(body, bodylen));
+            fprintf(stderr, "bodylen: %d\n", bodylen);
+            fprintf(stderr, "key value: %s\n", str_of_array(key->value, key->len));
+            fprintf(stderr, "hmac computed: %s\n", str_of_array(hmac, hmac_len));
+            fprintf(stderr, "hmac expected: %s\n", str_of_array(tcs[i].hmac_expected, hmac_len));
         }
     }
 }

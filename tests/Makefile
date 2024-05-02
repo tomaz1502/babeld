@@ -5,9 +5,9 @@ ROOT_DIR=..
 CFLAGS = -Os -g -Wall -DTESTING
 
 OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
-       route.o xroute.o message.o resend.o configuration.o local.o \
-       hmac.o rfc6234/sha224-256.o BLAKE2/ref/blake2s-ref.o \
-       tests/hmac_test.o tests/util_test.o tests/test_utilities.o
+	   route.o xroute.o message.o resend.o configuration.o local.o \
+	   hmac.o rfc6234/sha224-256.o BLAKE2/ref/blake2s-ref.o \
+	   tests/hmac_test.o tests/util_test.o tests/test_utilities.o
 
 main: main.c hmac_test.o util_test.o test_utilities.o
 	cd $(ROOT_DIR) && $(CC) $(CFLAGS) -o tests/main tests/main.c $(OBJS)
