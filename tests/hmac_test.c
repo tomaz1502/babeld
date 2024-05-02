@@ -143,19 +143,8 @@ void setup(void)
     protocol_port = 6696;
 }
 
-void run_hmac_tests(void)
+void hmac_test_suite(void)
 {
-    struct timespec start, end;
-    double diff_secs;
-    printf("-----------------------------------------------------------\n");
-    printf("Running hmac.c tests:\n");
-    printf("-----------------------------------------------------------\n");
     setup();
-    clock_gettime(CLOCK_MONOTONIC, &start);
     run_test(compute_hmac_test, "compute_hmac_test");
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    diff_secs = end.tv_sec - start.tv_sec;
-    diff_secs += (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("hmac.c tests done.\n");
-    printf("Time taken: %.8f seconds.\n", diff_secs);
 }

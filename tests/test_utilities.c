@@ -63,13 +63,43 @@ int babel_check(int prop) {
     return prop;
 }
 
-void run_test(void (*test)(void), char* test_name) {
+void run_test(void (*test)(void), const char* test_name) {
     struct timespec start, end;
     double diff_secs;
+    const int prev_tests_run = tests_run, prev_tests_failed = tests_failed;
+    int fails_here, runs_here;
     clock_gettime(CLOCK_MONOTONIC, &start);
     test();
     clock_gettime(CLOCK_MONOTONIC, &end);
     diff_secs = end.tv_sec - start.tv_sec;
     diff_secs += (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("%s took %.8f seconds.\n", test_name, diff_secs);
+    fails_here = tests_failed - prev_tests_failed;
+    runs_here = tests_run - prev_tests_run;
+    printf("%s done. ", test_name);
+    if(fails_here > 0) {
+        printf("Some checks failed! (%d/%d). ", fails_here, runs_here);
+    }
+    printf("Time taken: %.8f.\n", diff_secs);
 }
+
+void run_suite(void (*suite)(void), const char* suite_name) {
+    struct timespec start, end;
+    double diff_secs;
+    const int prev_tests_run = tests_run, prev_tests_failed = tests_failed;
+    int fails_here, runs_here;
+    printf("-----------------------------------------------------------\n");
+    printf("Running %s tests:\n", suite_name);
+    printf("-----------------------------------------------------------\n");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    suite();
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    diff_secs = end.tv_sec - start.tv_sec;
+    diff_secs += (end.tv_nsec - start.tv_nsec) / 1e9;
+    fails_here = tests_failed - prev_tests_failed;
+    runs_here = tests_run - prev_tests_run;
+    printf("-----------------------------------------------------------\n");
+    printf("%s tests done.\n", suite_name);
+    printf("Total ime taken: %.8f seconds.\n", diff_secs);
+    printf("Checks failed: %d/%d.\n", fails_here, runs_here);
+}
+

@@ -31,6 +31,7 @@ int tests_run, tests_failed;
 void swap(int *a, int *b);
 char* str_of_array(const unsigned char* const arr, int len);
 int babel_check(int prop);
-void run_test(void (*test)(void), char* test_name);
+void run_test(void (*test)(void), const char* test_name);
+void run_suite(void (*suite)(void), const char* suite_name);
 
 #endif

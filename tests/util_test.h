@@ -1,1 +1,1 @@
-void run_util_tests(void);
+void util_test_suite(void);
