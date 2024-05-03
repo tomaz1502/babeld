@@ -217,27 +217,64 @@ void compute_hmac_test(void)
 
 void check_hmac_test(void)
 {
-    int i, num_of_cases;
+    int i, num_of_cases, packetlen, bodylen, rc;
+    unsigned char *packet, *src, *dst;
+    struct interface ifp;
 
     typedef struct test_case {
-        const unsigned char *packet_val;
+        unsigned char *packet_val;
         int packetlen_val;
         int bodylen_val;
-        const unsigned char *src_val;
-        const unsigned char *dst_val;
-        struct interface ifp_val;
-        int rc_expected;
+        unsigned char src_val[ADDRESS_ARRAY_SIZE];
+        unsigned char dst_val[ADDRESS_ARRAY_SIZE];
+        struct key key_val;
+        int expected_rc;
     } test_case;
 
     test_case tcs[] =
     {
         {
-
+            .packet_val = (unsigned char[])
+                {42, 2, 0, 38, 4, 6, 0, 0, 225, 41, 1, 144, 5, 14, 3, 0, 255, 255, 4, 176, 206, 28,
+                 12, 0, 201, 49, 72, 251, 17, 12, 0, 0, 0, 45, 30, 49, 0, 24, 166, 65, 135, 33, 16,
+                 16, 248, 177, 170, 189, 252, 65, 5, 109, 182, 72, 235, 164, 149, 244, 243, 227},
+            .packetlen_val = 60,
+            .bodylen_val = 38,
+            .src_val = {254, 128, 0, 0, 0, 0, 0, 0, 28, 106, 200, 156, 164, 179, 1, 90},
+            .dst_val = {255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6},
+            .key_val = {
+                .value = (unsigned char [])
+                    {184, 17, 96, 231, 142, 203, 75, 118, 42, 213, 55, 90, 176, 66, 15, 104, 19,
+                     214, 60, 175, 10, 203, 125, 180, 142, 232, 123, 168, 191, 50, 173, 44}
+            },
+            .expected_rc = 1
         }
     };
 
-    for(i = 0; i < num_of_cases; ++i) {
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
 
+    for(i = 0; i < num_of_cases; ++i) {
+        packet = tcs[i].packet_val;
+        packetlen = tcs[i].packetlen_val;
+        bodylen = tcs[i].bodylen_val;
+        src = tcs[i].src_val;
+        dst = tcs[i].dst_val;
+        ifp.key = &tcs[i].key_val;
+
+        rc = check_hmac(packet, packetlen, bodylen, src, dst, &ifp);
+
+        if(!babel_check(rc == tcs[i].expected_rc)) {
+            fprintf(stderr, "Failed test on check_hmac:\n");
+            fprintf(stderr, "src: %s\n", str_of_array(src, ADDRESS_ARRAY_SIZE));
+            fprintf(stderr, "dst: %s\n", str_of_array(dst, ADDRESS_ARRAY_SIZE));
+            fprintf(stderr, "packetlen: %d\n", packetlen);
+            fprintf(stderr, "packet: %s\n", str_of_array(packet, packetlen));
+            fprintf(stderr, "bodylen: %d\n", bodylen);
+            fprintf(stderr, "key value: %s\n", str_of_array(ifp.key->value, ifp.key->len));
+            fprintf(stderr, "rc computed: %d\n", rc);
+            fprintf(stderr, "rc expected: %d\n", tcs[i].expected_rc);
+            fflush(stderr);
+        }
     }
 }
 
