@@ -102,7 +102,7 @@ void run_suite(void (*suite)(void), const char* suite_name) {
     runs_here = tests_run - prev_tests_run;
     printf("-----------------------------------------------------------\n");
     printf("%s tests done.\n", suite_name);
-    printf("Total ime taken: %.8f seconds.\n", diff_secs);
+    printf("Total time taken: %.8f seconds.\n", diff_secs);
     printf("Checks failed: %d/%d.\n", fails_here, runs_here);
 }
 
