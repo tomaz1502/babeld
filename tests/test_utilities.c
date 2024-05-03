@@ -28,6 +28,9 @@ THE SOFTWARE.
 #include "../kernel.h"
 #include "../util.h"
 
+int tests_run = 0;
+int tests_failed = 0;
+
 void
 swap(int* a, int* b)
 {
