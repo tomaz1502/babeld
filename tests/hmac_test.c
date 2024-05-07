@@ -300,6 +300,8 @@ void add_hmac_test(void)
             fprintf(stderr, "expected buf: %s\n", str_of_array(tcs[i].expected_buf_val, tcs[i].expected_buf_len));
         }
     }
+
+    free(ifp.ll);
 }
 
 void check_hmac_test(void)
