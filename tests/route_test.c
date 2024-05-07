@@ -28,9 +28,17 @@ THE SOFTWARE.
 
 #include "test_utilities.h"
 #include "../babeld.h"
+#include "../util.h"
+#include "../kernel.h"
 #include "../interface.h"
 #include "../source.h"
+#include "../neighbour.h"
 #include "../route.h"
+#include "../xroute.h"
+#include "../message.h"
+#include "../resend.h"
+#include "../configuration.h"
+#include "../local.h"
 
 void route_compare_test(void) {
     int i, num_of_cases, rc;
@@ -54,64 +62,32 @@ void route_compare_test(void) {
     {
         {
             .prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 10, 0, 3, 227, 128, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74, 17, 0, 0, 0, 0, 0, 0,
-                 81, 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224, 172, 225, 195, 128,
-                 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 254, 255,
-                 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,10,0,3,227},
             .plen_val = 128,
             .src_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74,
-                 17, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224,
-                 172, 225, 195, 128, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-                 0, 0, 0, 254, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0},
             .src_plen_val = 96,
             .route_src_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74,
-                 17, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224,
-                 172, 225, 195, 128, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-                 0, 0, 0, 254, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0},
             .route_src_plen_val = 96,
             .route_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 10, 0, 3, 227, 128, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74, 17, 0, 0, 0, 0, 0, 0, 81,
-                 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224, 172, 225, 195, 128, 112,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 254, 255, 255,
-                 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,10,0,3,227},
             .route_plen_val = 128,
             .expected_rc = 0
         },
         {
 
             .prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 168, 1, 101, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 255, 255, 0, 0, 0, 0, 128, 96, 0, 0, 2, 165, 84, 255, 254, 235, 67, 183, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 168, 1, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 255, 255, 0, 0, 0, 0, 128, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,192,168,1,101},
             .plen_val = 128,
             .src_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 128, 96, 0, 0, 2, 165, 84, 255,
-                 254, 235, 67, 183, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 168, 1, 101, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 128, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0},
             .src_plen_val = 96,
             .route_src_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74,
-                 17, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224,
-                 172, 225, 195, 128, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
-                 0, 0, 0, 254, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0},
             .route_src_plen_val = 96,
             .route_prefix_val = (unsigned char[])
-                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 10, 0, 3, 227, 128, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 255, 255, 0, 0, 0, 0, 96, 235, 53, 96, 0, 1, 0, 74, 17, 0, 0, 0, 0, 0, 0, 81,
-                 0, 0, 0, 0, 0, 0, 0, 0, 224, 199, 76, 113, 91, 0, 0, 224, 172, 225, 195, 128, 112,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 254, 255, 255,
-                 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0},
+                {0,0,0,0,0,0,0,0,0,0,255,255,10,0,3,227},
             .route_plen_val = 128,
             .expected_rc = 182
         },
@@ -139,6 +115,8 @@ void route_compare_test(void) {
             fprintf(stderr, "src_plen: %d\n", src_plen);
             fprintf(stderr, "route->src->prefix: %s\n", str_of_array(route.src->prefix, route.src->plen));
             fprintf(stderr, "route->src->plen: %d\n", route.src->plen);
+            fprintf(stderr, "route->src->src_prefix: %s\n", str_of_array(route.src->src_prefix, route.src->src_plen));
+            fprintf(stderr, "route->src->src_plen: %d\n", route.src->src_plen);
             fprintf(stderr, "expected rc: %d\n", tcs[i].expected_rc);
             fprintf(stderr, "computed rc: %d\n", rc);
             fflush(stderr);
@@ -147,6 +125,85 @@ void route_compare_test(void) {
     free(route.src);
 }
 
+void find_route_slot_test(void) {
+    int i, num_of_cases, rc;
+    unsigned char *prefix, *src_prefix;
+    unsigned char plen, src_plen;
+
+    typedef struct test_case {
+        unsigned char *prefix_val;
+        unsigned char plen_val;
+        unsigned char *src_prefix_val;
+        unsigned char src_plen_val;
+        int expected_rc;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        {
+            .prefix_val = (unsigned char[])
+                {},
+            .plen_val = 0,
+            .src_prefix_val = (unsigned char[])
+                {},
+            .src_plen_val = 0,
+            .expected_rc = 0
+        },
+        {
+
+            .prefix_val = (unsigned char[])
+                {},
+            .plen_val = 0,
+            .src_prefix_val = (unsigned char[])
+                {},
+            .src_plen_val = 0,
+            .expected_rc = 0
+        },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+    for(i = 0; i < num_of_cases; ++i) {
+        prefix = tcs[i].prefix_val;
+        plen = tcs[i].plen_val;
+        src_prefix = tcs[i].src_prefix_val;
+        src_plen = tcs[i].src_plen_val;
+
+        /* rc = route_compare(prefix, plen, src_prefix, src_plen, &route); */
+
+        if(!babel_check(rc == tcs[i].expected_rc)) {
+            fprintf(stderr, "Failed test on route_compare\n");
+            fprintf(stderr, "prefix: %s\n", str_of_array(prefix, plen));
+            fprintf(stderr, "plen: %d\n", plen);
+            fprintf(stderr, "src_prefix: %s\n", str_of_array(src_prefix, src_plen));
+            fprintf(stderr, "src_plen: %d\n", src_plen);
+            fprintf(stderr, "expected rc: %d\n", tcs[i].expected_rc);
+            fprintf(stderr, "computed rc: %d\n", rc);
+            fflush(stderr);
+        }
+    }
+}
+
+void setup(void) {
+    int i;
+    routes = malloc(6 * sizeof(struct babel_route*));
+    for(i = 0; i < 6; i++) {
+        routes[i] = malloc(sizeof(struct babel_route));
+        routes[i]->src = malloc(sizeof(struct source));
+    }
+
+}
+
+void tear_down(void) {
+    int i;
+    for(i = 0; i < 6; i++) {
+        free(routes[i]->src);
+        free(routes[i]);
+    }
+    free(routes);
+}
+
 void route_test_suite() {
+    setup();
     run_test(route_compare_test, "route_compare_test");
+    run_test(find_route_slot_test, "find_route_slot");
 }
