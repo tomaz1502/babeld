@@ -41,6 +41,10 @@ struct route_stream;
 extern struct babel_route **routes;
 extern int kernel_metric, allow_duplicates, reflect_kernel_metric;
 
+int
+route_compare(const unsigned char *prefix, unsigned char plen,
+              const unsigned char *src_prefix, unsigned char src_plen,
+              struct babel_route *route);
 static inline int
 route_metric(const struct babel_route *route)
 {
