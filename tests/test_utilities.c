@@ -81,6 +81,8 @@ void run_test(void (*test)(void), const char* test_name) {
     printf("%s done. ", test_name);
     if(fails_here > 0) {
         printf("Some checks failed! (%d/%d). ", fails_here, runs_here);
+    } else {
+      printf("All tests passed. ");
     }
     printf("Time taken: %.8f.\n", diff_secs);
 }

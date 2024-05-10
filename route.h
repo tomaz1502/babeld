@@ -39,7 +39,7 @@ struct babel_route {
 struct route_stream;
 
 extern struct babel_route **routes;
-extern int kernel_metric, allow_duplicates, reflect_kernel_metric;
+extern int route_slots, kernel_metric, allow_duplicates, reflect_kernel_metric;
 
 int
 route_compare(const unsigned char *prefix, unsigned char plen,
