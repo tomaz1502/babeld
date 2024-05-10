@@ -344,6 +344,75 @@ void find_route_test(void) {
     }
 }
 
+void insert_route_test(void) {
+    int i, num_of_cases, test_ok;
+    struct babel_route *route, *returned_route, *r;
+
+    typedef struct test_case {
+        unsigned char *prefix_val;
+        unsigned char plen_val;
+        unsigned char *src_prefix_val;
+        unsigned char src_plen_val;
+        int expected_pos;
+    } test_case;
+
+    test_case tcs[] =
+    {
+        {
+            .prefix_val = (unsigned char[])
+                { 88, 162, 240, 49, 189, 24, 46, 203, 201, 107, 41, 160, 213, 182, 197, 23 },
+            .plen_val = 101,
+            .src_prefix_val = (unsigned char[])
+                { 26, 137, 255, 238, 199, 6, 224, 128, 87, 142, 8, 197, 49, 142, 106, 113 },
+            .src_plen_val = 115,
+            .expected_pos = 2
+        },
+        {
+            .prefix_val = (unsigned char[])
+                { 68, 162, 240, 49, 189, 24, 46, 203, 201, 107, 41, 160, 213, 182, 197, 23 },
+            .plen_val = 101,
+            .src_prefix_val = (unsigned char[])
+                { 26, 137, 255, 238, 199, 6, 224, 128, 87, 142, 8, 197, 49, 142, 106, 113 },
+            .src_plen_val = 115,
+            .expected_pos = 0
+        },
+        {
+            .prefix_val = (unsigned char[])
+                { 78, 162, 240, 49, 189, 24, 46, 203, 201, 107, 41, 160, 213, 182, 197, 23 },
+            .plen_val = 101,
+            .src_prefix_val = (unsigned char[])
+                { 26, 137, 255, 238, 199, 6, 224, 128, 87, 142, 8, 197, 49, 142, 106, 113 },
+            .src_plen_val = 115,
+            .expected_pos = 2
+        },
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        route = malloc(sizeof(struct babel_route));
+        route->installed = 0;
+        route->src = malloc(sizeof(struct source));
+        route->src->plen = tcs[i].plen_val;
+        memcpy(route->src->prefix, tcs[i].prefix_val, 16);
+        route->src->src_plen = tcs[i].src_plen_val;
+        memcpy(route->src->src_prefix, tcs[i].src_prefix_val, 16);
+
+        returned_route = insert_route(route);
+
+        r = routes[tcs[i].expected_pos];
+        while(r->next)
+            r = r->next;
+
+        test_ok = returned_route != NULL;
+        test_ok &= r == route;
+        if(!babel_check(test_ok)) {
+            fprintf(stderr, "Failed test (%d) on insert_route\n", i);
+            fprintf(stderr, "routes[%d] is not equal to the route being inserted.\n", tcs[i].expected_pos);
+        }
+    }
+}
+
 void route_setup(void) {
     int i;
     // Randomly generated (sorted)
@@ -378,11 +447,12 @@ void route_setup(void) {
         memcpy(routes[i]->src->src_prefix, src_prefixes[i], 16);
     }
     route_slots = N_ROUTES;
+    max_route_slots = N_ROUTES;
 }
 
 void route_tear_down(void) {
     int i;
-    for(i = 0; i < N_ROUTES; i++) {
+    for(i = 0; i < route_slots; i++) {
         free(routes[i]->src);
         free(routes[i]);
     }
@@ -394,5 +464,6 @@ void route_test_suite() {
     run_test(route_compare_test, "route_compare_test");
     run_test(find_route_slot_test, "find_route_slot_test");
     run_test(find_route_test, "find_route_test");
+    run_test(insert_route_test, "insert_route_test");
     route_tear_down();
 }

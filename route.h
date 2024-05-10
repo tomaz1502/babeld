@@ -39,7 +39,7 @@ struct babel_route {
 struct route_stream;
 
 extern struct babel_route **routes;
-extern int route_slots, kernel_metric, allow_duplicates, reflect_kernel_metric;
+extern int max_route_slots, route_slots, kernel_metric, allow_duplicates, reflect_kernel_metric;
 
 int
 route_compare(const unsigned char *prefix, unsigned char plen,
@@ -63,6 +63,7 @@ struct babel_route *find_installed_route(const unsigned char *prefix,
                         unsigned char plen, const unsigned char *src_prefix,
                         unsigned char src_plen);
 int installed_routes_estimate(void);
+struct babel_route * insert_route(struct babel_route *route);
 void flush_route(struct babel_route *route);
 void flush_all_routes(void);
 void flush_neighbour_routes(struct neighbour *neigh);

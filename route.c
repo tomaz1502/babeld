@@ -41,7 +41,7 @@ THE SOFTWARE.
 #include "local.h"
 
 struct babel_route **routes = NULL;
-static int max_route_slots = 0;
+int max_route_slots = 0;
 int route_slots = 0;
 int kernel_metric = 0, reflect_kernel_metric = 0;
 int allow_duplicates = -1;
@@ -190,7 +190,7 @@ resize_route_table(int new_slots)
 
 /* Insert a route into the table.  If successful, retains the route.
    On failure, caller must free the route. */
-static struct babel_route *
+struct babel_route *
 insert_route(struct babel_route *route)
 {
     int i, n;
