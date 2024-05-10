@@ -45,6 +45,10 @@ int
 route_compare(const unsigned char *prefix, unsigned char plen,
               const unsigned char *src_prefix, unsigned char src_plen,
               struct babel_route *route);
+int
+find_route_slot(const unsigned char *prefix, unsigned char plen,
+                const unsigned char *src_prefix, unsigned char src_plen,
+                int *new_return);
 static inline int
 route_metric(const struct babel_route *route)
 {
