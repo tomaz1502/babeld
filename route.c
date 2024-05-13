@@ -47,6 +47,10 @@ int kernel_metric = 0, reflect_kernel_metric = 0;
 int allow_duplicates = -1;
 int diversity_factor = 256;     /* in units of 1/256 */
 
+#if defined(TESTING)
+int local_notify_route_called = 0;
+#endif
+
 static int smoothing_half_life = 0;
 static int two_to_the_one_over_hl = 0; /* 2^(1/hl) * 0x10000 */
 
@@ -249,6 +253,9 @@ flush_route(struct babel_route *route)
                         route->src->src_prefix, route->src->src_plen, NULL);
     assert(i >= 0 && i < route_slots);
 
+#if defined(TESTING)
+    local_notify_route_called = 1;
+#endif
     local_notify_route(route, LOCAL_FLUSH);
 
     if(route == routes[i]) {

@@ -40,6 +40,9 @@ struct route_stream;
 
 extern struct babel_route **routes;
 extern int max_route_slots, route_slots, kernel_metric, allow_duplicates, reflect_kernel_metric;
+#if defined(TESTING)
+extern int local_notify_route_called;
+#endif
 
 int
 route_compare(const unsigned char *prefix, unsigned char plen,
