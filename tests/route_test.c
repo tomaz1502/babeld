@@ -353,6 +353,21 @@ void find_route_test(void) {
     }
 }
 
+void installed_routes_estimate_test(void) {
+    struct route_stream *stream = route_stream(1);
+    int installed_routes = 0, estimate = installed_routes_estimate();
+
+    while(stream != NULL) {
+        route_stream_next(stream);
+        installed_routes++;
+    }
+    if(!babel_check(installed_routes <= estimate)) {
+        fprintf(stderr, "Failed test on installed_routes_estimate.\n");
+        fprintf(stderr, "Expected that the estimated number would be greater or equal to the number of actually installed routes.\n");
+        fprintf(stderr, "Installed routes: %d\nEstimate: %d\n", installed_routes, estimate);
+    }
+}
+
 void insert_route_test(void) {
     int i, num_of_cases, test_ok;
     struct babel_route *route, *returned_route, *r;
@@ -481,7 +496,7 @@ void flush_route_test(void) {
             test_ok &= curr_length == prev_length - 1;
 
         if(!babel_check(test_ok)) {
-            fprintf(stderr, "Failed test (%d) on flush_route\n", i);
+            fprintf(stderr, "Failed test (%d) on flush_route.\n", i);
             fprintf(stderr, "Trying to flush %d-th route from %d-th slot:\n", tcs[i].pos, tcs[i].slot);
             if(local_notify_route_called != 1)
                 fprintf(stderr, "Local notify route was not called.\n");
@@ -489,6 +504,40 @@ void flush_route_test(void) {
                 fprintf(stderr, "Route list length was not updated. Previous: %d; Current: %d.\n", prev_length, curr_length);
             if(tcs[i].last_route_in_slot && route_slots != prev_slots - 1)
                 fprintf(stderr, "Number of route slots was not updated. Previous: %d; Current: %d.\n", prev_slots, route_slots);
+        }
+    }
+}
+
+void route_stream_next_test(void) {
+    int i, num_of_cases, test_ok;
+    struct route_stream *stream;
+    struct babel_route *route;
+
+    typedef struct test_case {
+        int installed_val;
+        struct babel_route *expected_route;
+    } test_case;
+
+    // NOTE: the order in which the tests are run must be considered
+    test_case tcs[] = {
+        {
+            .installed_val = 0,
+            .expected_route = routes[0],
+        },
+        {
+            .installed_val = 0,
+            .expected_route = routes[0]
+        }
+    };
+
+    num_of_cases = sizeof(tcs) / sizeof(test_case);
+
+    for(i = 0; i < num_of_cases; ++i) {
+        stream = route_stream(tcs[i].installed_val);
+        route = route_stream_next(stream);
+
+        if(!babel_check(tcs[i].expected_route == route)) {
+            fprintf(stderr,  "Failed test (%d) on route_stream_next.\n", i);
         }
     }
 }
@@ -550,6 +599,8 @@ void route_test_suite() {
     run_route_test(route_compare_test, "route_compare_test");
     run_route_test(find_route_slot_test, "find_route_slot_test");
     run_route_test(find_route_test, "find_route_test");
+    run_route_test(installed_routes_estimate_test, "installed_routes_estimate_test");
     run_route_test(insert_route_test, "insert_route_test");
     run_route_test(flush_route_test, "flush_route_test");
+    run_route_test(route_stream_next_test, "route_stream_next_test");
 }
