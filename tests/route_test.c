@@ -547,9 +547,9 @@ void run_route_test(void (*test)(void), char *test_name) {
 }
 
 void route_test_suite() {
-    /* run_route_test(route_compare_test, "route_compare_test"); */
-    /* run_route_test(find_route_slot_test, "find_route_slot_test"); */
-    /* run_route_test(find_route_test, "find_route_test"); */
-    /* run_route_test(insert_route_test, "insert_route_test"); */
+    run_route_test(route_compare_test, "route_compare_test");
+    run_route_test(find_route_slot_test, "find_route_slot_test");
+    run_route_test(find_route_test, "find_route_test");
+    run_route_test(insert_route_test, "insert_route_test");
     run_route_test(flush_route_test, "flush_route_test");
 }
