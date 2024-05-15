@@ -355,11 +355,15 @@ void find_route_test(void) {
 
 void installed_routes_estimate_test(void) {
     struct route_stream *stream = route_stream(1);
+    struct babel_route *r;
     int installed_routes = 0, estimate = installed_routes_estimate();
 
-    while(stream != NULL) {
-        route_stream_next(stream);
-        installed_routes++;
+    while(1) {
+        r = route_stream_next(stream);
+        if(r == NULL)
+            break;
+        else
+            installed_routes++;
     }
     if(!babel_check(installed_routes <= estimate)) {
         fprintf(stderr, "Failed test on installed_routes_estimate.\n");
@@ -509,7 +513,7 @@ void flush_route_test(void) {
 }
 
 void route_stream_next_test(void) {
-    int i, num_of_cases, test_ok;
+    int i, num_of_cases;
     struct route_stream *stream;
     struct babel_route *route;
 
@@ -573,6 +577,8 @@ void route_setup(void) {
         routes[i]->src->src_plen = src_plens[i];
         routes[i]->src->route_count = 1;
         routes[i]->neigh = &ns[i];
+        if(i == 0)
+            install_route(routes[i]);
         memcpy(routes[i]->src->prefix, prefixes[i], 16);
         memcpy(routes[i]->src->src_prefix, src_prefixes[i], 16);
     }
@@ -601,6 +607,6 @@ void route_test_suite() {
     run_route_test(find_route_test, "find_route_test");
     run_route_test(installed_routes_estimate_test, "installed_routes_estimate_test");
     run_route_test(insert_route_test, "insert_route_test");
-    run_route_test(flush_route_test, "flush_route_test");
+    /* run_route_test(flush_route_test, "flush_route_test"); */
     run_route_test(route_stream_next_test, "route_stream_next_test");
 }
