@@ -42,7 +42,7 @@ THE SOFTWARE.
 
 #define N_ROUTES 6
 
-struct neighbour ns[N_ROUTES];
+struct neighbour *ns[N_ROUTES];
 
 int sign(int x) {
     if(x > 0)
@@ -334,7 +334,7 @@ void find_route_test(void) {
         plen = tcs[i].plen_val;
         src_prefix = tcs[i].src_prefix_val;
         src_plen = tcs[i].src_plen_val;
-        neigh = &ns[tcs[i].neigh_index_val];
+        neigh = ns[tcs[i].neigh_index_val];
 
         route = find_route(prefix, plen, src_prefix, src_plen, neigh);
 
@@ -365,7 +365,7 @@ void installed_routes_estimate_test(void) {
         else
             installed_routes++;
     }
-    if(!babel_check(installed_routes <= estimate)) {
+    if(!babel_check(installed_routes <= estimate && estimate == route_slots)) {
         fprintf(stderr, "Failed test on installed_routes_estimate.\n");
         fprintf(stderr, "Expected that the estimated number would be greater or equal to the number of actually installed routes.\n");
         fprintf(stderr, "Installed routes: %d\nEstimate: %d\n", installed_routes, estimate);
@@ -416,6 +416,7 @@ void insert_route_test(void) {
     };
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
+    struct babel_route *added_routes[num_of_cases];
 
     for(i = 0; i < num_of_cases; ++i) {
         route = malloc(sizeof(struct babel_route));
@@ -424,6 +425,7 @@ void insert_route_test(void) {
         route->src->plen = tcs[i].plen_val;
         memcpy(route->src->prefix, tcs[i].prefix_val, 16);
         route->src->src_plen = tcs[i].src_plen_val;
+        route->src->route_count = 1;
         memcpy(route->src->src_prefix, tcs[i].src_prefix_val, 16);
 
         returned_route = insert_route(route);
@@ -438,7 +440,10 @@ void insert_route_test(void) {
             fprintf(stderr, "Failed test (%d) on insert_route\n", i);
             fprintf(stderr, "routes[%d] is not equal to the route being inserted.\n", tcs[i].expected_pos);
         }
+        added_routes[i] = r;
     }
+    for(i = 0; i < num_of_cases; i++)
+        flush_route(added_routes[i]);
 }
 
 void flush_route_test(void) {
@@ -522,15 +527,14 @@ void route_stream_next_test(void) {
         struct babel_route *expected_route;
     } test_case;
 
-    // NOTE: the order in which the tests are run must be considered
     test_case tcs[] = {
         {
             .installed_val = 0,
             .expected_route = routes[0],
         },
         {
-            .installed_val = 0,
-            .expected_route = routes[0]
+            .installed_val = 1,
+            .expected_route = NULL,
         }
     };
 
@@ -589,34 +593,30 @@ void route_setup(void) {
     int src_plens[] = {100, 115, 96, 50, 37, 81};
     for(i = 0; i < N_ROUTES; i++) {
         const unsigned char id[] = {i};
-        struct neighbour* n = find_neighbour(neigh_addresses[i], ifp);
-        struct babel_route* r = update_route(id, prefixes[i], plens[i], src_prefixes[i], src_plens[i], 0, 10, 0, n, next_hops[i]);
-        if(i == 2)
-            r->installed = 1;
+        struct neighbour *n = find_neighbour(neigh_addresses[i], ifp);
+        struct babel_route *r = update_route(id, prefixes[i], plens[i], src_prefixes[i], src_plens[i], 0, 10, 0, n, next_hops[i]);
+        ns[i] = n;
+        // This will make some call to the kernel that is breaking the tests
+        /* install_route(r); */
     }
 }
 
 void route_tear_down(void) {
-    int i;
-    for(i = 0; i < route_slots; i++) {
-        flush_route(routes[i]);
-    }
-    free(routes);
+    flush_all_routes();
 }
 
-/* void run_route_test(void (*test)(void), char *test_name) { */
-/*     route_setup(); */
-/*     run_test(test, test_name); */
-/*     /1* route_tear_down(); *1/ */
-/* } */
+void run_route_test(void (*test)(void), char *test_name) {
+    route_setup();
+    run_test(test, test_name);
+    route_tear_down();
+}
 
 void route_test_suite() {
-    route_setup();
-    run_test(route_compare_test, "route_compare_test");
-    run_test(find_route_slot_test, "find_route_slot_test");
-    run_test(find_route_test, "find_route_test");
-    run_test(installed_routes_estimate_test, "installed_routes_estimate_test");
-    run_test(insert_route_test, "insert_route_test");
-    /* run_test(flush_route_test, "flush_route_test"); */
-    /* run_test(route_stream_next_test, "route_stream_next_test"); */
+    run_route_test(route_compare_test, "route_compare_test");
+    run_route_test(find_route_slot_test, "find_route_slot_test");
+    run_route_test(find_route_test, "find_route_test");
+    run_route_test(installed_routes_estimate_test, "installed_routes_estimate_test");
+    run_route_test(insert_route_test, "insert_route_test");
+    run_route_test(flush_route_test, "flush_route_test");
+    run_route_test(route_stream_next_test, "route_stream_next_test");
 }
