@@ -476,7 +476,7 @@ void fromhex_test(void)
         { "0A2aC8", {0x0a, 0x2a, 0xc8}, 6 }
     };
 
-    dst = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
+    dst = malloc(ADDRESS_ARRAY_SIZE);
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -567,7 +567,7 @@ void normalize_prefix_test(void)
         { {0x1, 0x1, 0x1, 0x1}, {0x1, 0x1, 0x1, 0x0}, 4, 30 }
     };
 
-    result = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
+    result = malloc(ADDRESS_ARRAY_SIZE);
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -625,7 +625,7 @@ void format_address_test(void)
         },
     };
 
-    result = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
+    result = malloc(ADDRESS_ARRAY_SIZE);
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
 
@@ -790,7 +790,7 @@ void parse_address_test(void)
         int expected_af_r, expected_rc;
     } test_case;
 
-    addr_r = malloc(ADDRESS_ARRAY_SIZE * sizeof(unsigned char));
+    addr_r = malloc(ADDRESS_ARRAY_SIZE);
     af_r = malloc(sizeof(int));
 
     test_case tcs[] =
@@ -882,8 +882,8 @@ void parse_net_test(void)
 
 
     net = malloc(sizeof(char) * NET_MAX_SIZE);
-    prefix_r = malloc(sizeof(unsigned char) * ADDRESS_ARRAY_SIZE);
-    plen_r = malloc(sizeof(unsigned char));
+    prefix_r = malloc(ADDRESS_ARRAY_SIZE);
+    plen_r = malloc(1);
     af_r = malloc(sizeof(int));
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);

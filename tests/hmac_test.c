@@ -187,7 +187,7 @@ void compute_hmac_test(void)
         }
     };
 
-    hmac = malloc(HMAC_MAX_SIZE * sizeof(unsigned char));
+    hmac = malloc(HMAC_MAX_SIZE);
     num_of_cases = sizeof(tcs) / sizeof(test_case);
     for(i = 0; i < num_of_cases; ++i) {
         src = tcs[i].src_val;
@@ -262,7 +262,7 @@ void add_hmac_test(void)
     };
 
     num_of_cases = sizeof(tcs) / sizeof(test_case);
-    ifp.ll = malloc(16 * sizeof(unsigned char));
+    ifp.ll = malloc(16);
 
     for(i = 0; i < num_of_cases; i++) {
         buf.len = tcs[i].buf_len_val;
