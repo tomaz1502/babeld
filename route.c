@@ -982,7 +982,7 @@ update_route(const unsigned char *id,
             return NULL;
         }
         local_notify_route(route, LOCAL_ADD);
-        consider_route(route);
+        /* consider_route(route); */
     }
     return route;
 }

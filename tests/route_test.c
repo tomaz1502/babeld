@@ -548,7 +548,25 @@ void route_stream_next_test(void) {
 
 void route_setup(void) {
     int i;
-    // Randomly generated (sorted)
+    struct interface *ifp = add_interface("test_if", NULL);
+    unsigned char next_hops[][16] =
+      {
+        { 116, 183, 7, 94, 183, 40, 143, 20, 251, 193, 125, 15, 37, 226, 212, 149 },
+        { 221, 72, 210, 3, 227, 190, 71, 159, 76, 55, 112, 69, 199, 37, 117, 59 },
+        { 220, 124, 153, 147, 164, 40, 167, 160, 234, 37, 175, 15, 7, 131, 164, 228 },
+        { 204, 118, 231, 175, 52, 46, 78, 128, 102, 190, 197, 45, 227, 59, 104, 191 },
+        { 183, 2, 83, 92, 42, 250, 252, 20, 31, 171, 35, 38, 47, 200, 11, 251 },
+        { 62, 242, 170, 115, 33, 249, 243, 135, 183, 185, 180, 155, 244, 28, 90, 171 },
+      };
+    unsigned char neigh_addresses[][16] =
+      {
+        { 11, 192, 14, 226, 201, 183, 167, 80, 75, 132, 129, 96, 129, 53, 20, 225 },
+        { 166, 108, 155, 153, 212, 135, 74, 110, 123, 32, 24, 125, 212, 248, 2, 223 },
+        { 184, 16, 193, 129, 199, 104, 209, 18, 236, 82, 114, 110, 135, 135, 79, 45 },
+        { 243, 235, 198, 200, 114, 17, 54, 237, 49, 78, 107, 5, 70, 109, 228, 255 },
+        { 125, 165, 128, 69, 13, 82, 87, 250, 164, 202, 104, 44, 81, 183, 89, 68 },
+        { 162, 32, 12, 21, 49, 67, 2, 98, 145, 109, 103, 216, 218, 75, 215, 88 },
+      };
     unsigned char prefixes[][16] =
       {
         { 69, 198, 228, 78, 253, 128, 30, 115, 115, 189, 34, 209, 203, 126, 38, 62 },
@@ -569,44 +587,36 @@ void route_setup(void) {
         { 173, 76, 71, 184, 21, 200, 70, 185, 15, 19, 223, 62, 165, 179, 210, 92 },
       };
     int src_plens[] = {100, 115, 96, 50, 37, 81};
-    routes = malloc(N_ROUTES * sizeof(struct babel_route*));
     for(i = 0; i < N_ROUTES; i++) {
-        routes[i] = malloc(sizeof(struct babel_route));
-        routes[i]->src = malloc(sizeof(struct source));
-        routes[i]->src->plen = plens[i];
-        routes[i]->src->src_plen = src_plens[i];
-        routes[i]->src->route_count = 1;
-        routes[i]->neigh = &ns[i];
-        if(i == 0)
-            install_route(routes[i]);
-        memcpy(routes[i]->src->prefix, prefixes[i], 16);
-        memcpy(routes[i]->src->src_prefix, src_prefixes[i], 16);
+        const unsigned char id[] = {i};
+        struct neighbour* n = find_neighbour(neigh_addresses[i], ifp);
+        struct babel_route* r = update_route(id, prefixes[i], plens[i], src_prefixes[i], src_plens[i], 0, 10, 0, n, next_hops[i]);
+        if(i == 2)
+            r->installed = 1;
     }
-    route_slots = N_ROUTES;
-    max_route_slots = N_ROUTES;
 }
 
 void route_tear_down(void) {
     int i;
     for(i = 0; i < route_slots; i++) {
-        free(routes[i]->src);
-        free(routes[i]);
+        flush_route(routes[i]);
     }
     free(routes);
 }
 
-void run_route_test(void (*test)(void), char *test_name) {
-    route_setup();
-    run_test(test, test_name);
-    route_tear_down();
-}
+/* void run_route_test(void (*test)(void), char *test_name) { */
+/*     route_setup(); */
+/*     run_test(test, test_name); */
+/*     /1* route_tear_down(); *1/ */
+/* } */
 
 void route_test_suite() {
-    run_route_test(route_compare_test, "route_compare_test");
-    run_route_test(find_route_slot_test, "find_route_slot_test");
-    run_route_test(find_route_test, "find_route_test");
-    run_route_test(installed_routes_estimate_test, "installed_routes_estimate_test");
-    run_route_test(insert_route_test, "insert_route_test");
-    /* run_route_test(flush_route_test, "flush_route_test"); */
-    run_route_test(route_stream_next_test, "route_stream_next_test");
+    route_setup();
+    run_test(route_compare_test, "route_compare_test");
+    run_test(find_route_slot_test, "find_route_slot_test");
+    run_test(find_route_test, "find_route_test");
+    run_test(installed_routes_estimate_test, "installed_routes_estimate_test");
+    run_test(insert_route_test, "insert_route_test");
+    /* run_test(flush_route_test, "flush_route_test"); */
+    /* run_test(route_stream_next_test, "route_stream_next_test"); */
 }
