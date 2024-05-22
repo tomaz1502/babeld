@@ -491,29 +491,35 @@ void flush_route_test(void) {
         for(j = 0; j < tcs[i].pos; j++)
             r = r->next;
 
-        local_notify_route_called = 0;
         prev_slots = route_slots;
         prev_length = route_list_length(routes[tcs[i].slot]);
 
         flush_route(r);
 
         curr_length = route_list_length(routes[tcs[i].slot]);
-        test_ok = local_notify_route_called == 1;
         if(tcs[i].last_route_in_slot)
-            test_ok &= route_slots == prev_slots - 1;
+            test_ok = route_slots == prev_slots - 1;
         else
-            test_ok &= curr_length == prev_length - 1;
+            test_ok = curr_length == prev_length - 1;
 
         if(!babel_check(test_ok)) {
             fprintf(stderr, "Failed test (%d) on flush_route.\n", i);
             fprintf(stderr, "Trying to flush %d-th route from %d-th slot:\n", tcs[i].pos, tcs[i].slot);
-            if(local_notify_route_called != 1)
-                fprintf(stderr, "Local notify route was not called.\n");
             if(!tcs[i].last_route_in_slot && curr_length != prev_length - 1)
                 fprintf(stderr, "Route list length was not updated. Previous: %d; Current: %d.\n", prev_length, curr_length);
             if(tcs[i].last_route_in_slot && route_slots != prev_slots - 1)
                 fprintf(stderr, "Number of route slots was not updated. Previous: %d; Current: %d.\n", prev_slots, route_slots);
         }
+    }
+}
+
+void route_stream_test(void) {
+    struct route_stream *stream;
+    int which;
+    for(which = 0; which <= 1; which++) {
+        stream = route_stream(which);
+        if(!babel_check(stream != NULL))
+            fprintf(stderr, "Failed test: route_stream(%d) was NULL.", which);
     }
 }
 
@@ -548,6 +554,24 @@ void route_stream_next_test(void) {
             fprintf(stderr,  "Failed test (%d) on route_stream_next.\n", i);
         }
     }
+}
+
+void metric_to_kernel_test(void) {
+    int m;
+    m = metric_to_kernel(2 * INFINITY);
+    if(!babel_check(m == KERNEL_INFINITY))
+        fprintf(stderr, "Failed test: metric_to_kernel(2 * INFINITY) = %d, expected %d\n", m, KERNEL_INFINITY);
+    m = metric_to_kernel(INFINITY - 1);
+    if(!babel_check(m == kernel_metric))
+        fprintf(stderr, "Failed test: metric_to_kernel(INFINITY - 1) = %d, expected %d\n", m, kernel_metric);
+    reflect_kernel_metric = 1;
+    m = metric_to_kernel(KERNEL_INFINITY - 1);
+    if(!babel_check(m == KERNEL_INFINITY - 1))
+        fprintf(stderr, "Failed test: metric_to_kernel(KERNEL_INFINITY - 1) = %d, expected %d.\n", m, KERNEL_INFINITY - 1);
+    kernel_metric = 2;
+    m = metric_to_kernel(KERNEL_INFINITY - 1);
+    if(!babel_check(m == KERNEL_INFINITY))
+        fprintf(stderr, "Failed test: metric_to_kernel(KERNEL_INFINITY - 1) = %d, expected %d.\n", m, KERNEL_INFINITY);
 }
 
 void route_setup(void) {
@@ -618,5 +642,7 @@ void route_test_suite() {
     run_route_test(installed_routes_estimate_test, "installed_routes_estimate_test");
     run_route_test(insert_route_test, "insert_route_test");
     run_route_test(flush_route_test, "flush_route_test");
+    run_test(route_stream_test, "route_stream_test");
     run_route_test(route_stream_next_test, "route_stream_next_test");
+    run_test(metric_to_kernel_test, "metric_to_kernel_test");
 }
